@@ -86,7 +86,7 @@ def blacksuit_crawler():
 
 def everest_ransomware_group_crwaler():
     results = []
-    url = 'http://ransomocmou6mnbquqz44ewosbkjk3o5qjsl3orawojexfook2j7esad.onion/'
+    url = 'http://ransomocmou6mnbquqz44ewosbkjk3o5qjsl3orawojexfook2j7esad.onion/page/14'
     while url:
 
         try:
@@ -99,11 +99,10 @@ def everest_ransomware_group_crwaler():
                 result['title'] = title.text.strip() if title else ''
                 result['post_url'] = title.find('a').get('href') if title else ''
                 content = item.find('div', class_='entry-content')
-                result['content'] = content.find('p').text.strip() if content else ''
+                result['content'] = content.find('p').text.strip().replace('\xa0',' ') if content else ''
                 results.append(result)
-            older_posts = soup.find("a", string="Older Posts")
-
-            if older_posts and older_posts.get("href"):
+            older_posts = soup.find("a", class_='next page-numbers')
+            if older_posts:
                 url = older_posts["href"]
             else:
                 url = None
@@ -112,3 +111,4 @@ def everest_ransomware_group_crwaler():
             print(f"An error occurred: {e}")
     return results
 
+pprint.pprint(everest_ransomware_group_crwaler())
