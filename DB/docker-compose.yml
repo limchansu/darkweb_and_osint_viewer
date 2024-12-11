@@ -4,7 +4,6 @@ services:
   elasticsearch:
     restart: always
     image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
-    platform: linux/arm64
     ports:
       - "9200:9200"
       - "9300:9300"
@@ -28,7 +27,6 @@ services:
   kibana:
     restart: always
     image: kibana:7.17.26
-    platform: linux/arm64
     ports:
       - "5601:5601"
     depends_on:
@@ -57,7 +55,6 @@ services:
 
   mongo1:
     image: "mongo:6.0"
-    platform: linux/arm64
     ports:
       - "27020:27017"
     volumes:
@@ -68,7 +65,6 @@ services:
 
   mongo2:
     image: "mongo:6.0"
-    platform: linux/arm64
     ports:
       - "27021:27017"
     volumes:
@@ -81,7 +77,6 @@ services:
 
   mongo3:
     image: "mongo:6.0"
-    platform: linux/arm64
     ports:
       - "27022:27017"
     volumes:
