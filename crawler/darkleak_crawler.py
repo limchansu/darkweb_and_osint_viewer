@@ -42,10 +42,23 @@ def crawl_files():
     for row in rows:
         try:
             file_name = row.find("strong").text.strip()  # 파일 이름 추출
-            post_data = {"file_name": file_name}
+
+            # onclick 속성에서 URL 추출
+            onclick_attr = row.get("onclick")
+            if onclick_attr and "window.location='" in onclick_attr:
+                relative_url = onclick_attr.split("'")[1]  # URL 경로 추출
+                full_url = f"{base_url}/{relative_url}"  # 전체 URL 생성
+            else:
+                full_url = None  # URL이 없는 경우
+
+            # 데이터 저장
+            post_data = {
+                "file_name": file_name,
+                "url": full_url
+            }
 
             all_data.append(post_data)
-            print(f"추출 완료: {file_name}")
+            print(f"추출 완료: {file_name}, URL: {full_url}")
 
         except Exception as e:
             print(f"크롤링 중 오류 발생: {e}")
