@@ -1,0 +1,10 @@
+mongo-url = "mongodb://mongo1:27017,mongo2:27017,mongo3:27017/test?replicaSet=replication"
+elasticsearch-urls = ["http://elasticsearch:9200"]
+elasticsearch-max-conns = 4
+elasticsearch-max-seconds = 5
+elasticsearch-max-bytes = 8000000
+dropped-collections = false
+dropped-databases = false
+
+namespace-regex = "^test"
+direct-read-namespaces = ["book","log"]
