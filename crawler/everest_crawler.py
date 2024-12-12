@@ -7,7 +7,7 @@ rt = RequestsTor(tor_ports=(9050,), tor_cport=9051)
 
 def everest_ransomware_group_crawler():
     results = []
-    url = 'http://ransomocmou6mnbquqz44ewosbkjk3o5qjsl3orawojexfook2j7esad.onion/page/14'
+    url = 'http://ransomocmou6mnbquqz44ewosbkjk3o5qjsl3orawojexfook2j7esad.onion/'
     while url:
 
         try:
