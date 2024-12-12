@@ -1,7 +1,5 @@
 from requests_tor import RequestsTor
 from bs4 import BeautifulSoup
-import pprint
-
 
 
 rt = RequestsTor(tor_ports=(9050,), tor_cport=9051)
@@ -16,10 +14,8 @@ def rhysida_crawler():
         result = {}
         result['title'] = item.find('div', class_='m-2 h4').text
         result['content'] = item.select_one('div.m-2:not(.h4)').text.strip()
-        urls = [link['href'] for link in item.find_all('a', href=True)]
-        result['urls'] = urls if urls else ''
+        links = [link['href'] for link in item.find_all('a', href=True)]
+        result['links'] = links if links else ''
         results.append(result)
 
     return results
-
-pprint.pprint(rhysida_crawler())
