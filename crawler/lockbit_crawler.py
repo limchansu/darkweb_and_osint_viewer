@@ -1,11 +1,9 @@
-from pprint import pprint
-
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
-import time, pprint
+import time
 
 
 # Selenium Tor 프록시 설정
@@ -33,11 +31,8 @@ def lockbit_crawler():
         result = {}
         result['title'] = item.find('div', class_='post-title').text.strip()
         result['content'] = item.find('div', class_='post-block-text').text.strip()
-        result['post_url'] = item['href']
-        print(result)
+        result['post_url'] = url + item['href']
+        result['update_date'] = item.find('div', class_='updated-post-date').text.strip().replace('\xa0', '').replace('Updated: ', '')
         results.append(result)
     driver.quit()  # 브라우저 종료
     return results
-
-
-lockbit_crawler()
