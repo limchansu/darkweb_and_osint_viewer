@@ -5,19 +5,99 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Search with Options</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
+  <style>
+    .btn.active {
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); /* 버튼에 그림자 추가 */
+      border-color: #0056b3; /* 활성화된 버튼의 테두리 색상 */
+    }
+    /* 토글 버튼 스타일 */
+    #toggleBtn {
+      background-color: #6c757d; /* 기본 배경색 */
+      color: white; /* 글자 색상 */
+      border: none; /* 테두리 제거 */
+      border-radius: 5px; /* 모서리 둥글게 */
+      padding: 10px 20px; /* 버튼 내부 여백 */
+      font-size: 14px; /* 글자 크기 */
+      transition: background-color 0.3s, transform 0.2s; /* 배경색 및 애니메이션 효과 */
+      position: relative; /* 위치 조정 가능 */
+      z-index: 1000; /* 다른 요소보다 위에 표시 */
+    }
+  
+    /* 버튼 호버 시 */
+    #toggleBtn:hover {
+      background-color: #5a6268; /* 어두운 배경색으로 변경 */
+      cursor: pointer; /* 마우스 포인터 변경 */
+      transform: scale(1.05); /* 살짝 확대 효과 */
+    }
+  
+    /* 버튼 클릭 시 */
+    #toggleBtn:active {
+      background-color: #545b62; /* 더 어두운 배경색 */
+      transform: scale(0.95); /* 살짝 축소 효과 */
+    }
+  
+    /* 화면 고정 버튼 위치 (필요한 경우) */
+    #toggleBtn.fixed {
+      position: fixed; /* 화면에 고정 */
+      top: 20px; /* 위쪽 여백 */
+      right: 20px; /* 오른쪽 여백 */
+    }
+  </style>
+  
   <script>
     let currentPage = 1; // 현재 페이지 번호
-    const itemsPerPage = 6; // 페이지당 항목 수
+    const itemsPerPage = 10; // 페이지당 항목 수
 
-    async function fetchData(page = 1) {
-      const query = document.getElementById('searchInput').value;
-      const searchType = document.querySelector('input[name="searchType"]:checked')?.value || 'osint'; // 선택된 옵션
-      const response = await fetch(`/search?query=${encodeURIComponent(query)}&page=${page}&limit=${itemsPerPage}&searchType=${searchType}`);
-      const data = await response.json();
-      renderCards(data);
-      renderPagination(data.totalPages);
+    let currentSearchType = 'osint'; // 초기 선택된 검색 유형
+
+    // 각 옵션에 대한 항목을 보여주는 함수
+    function toggleOptions(type) {
+      currentSearchType = type;  // 검색 유형 설정
+      const osintOptions = document.getElementById('osintOptions');
+      const darkwebOptions = document.getElementById('darkwebOptions');
+      const osintBtn = document.getElementById('osintBtn');
+      const darkwebBtn = document.getElementById('darkwebBtn');
+
+      // 버튼 활성화 상태 변경
+      osintBtn.classList.remove('active');
+      darkwebBtn.classList.remove('active');
+
+      if (type === 'osint') {
+        osintBtn.classList.add('active');
+        osintOptions.style.display = 'block';
+        darkwebOptions.style.display = 'none';
+      } else {
+        darkwebBtn.classList.add('active');
+        osintOptions.style.display = 'none';
+        darkwebOptions.style.display = 'block';
+      }
     }
 
+    // 옵션이 선택되었는지 확인하는 함수 (하나만 체크 가능, 반드시 체크되어야 함)
+    function validateOptions() {
+      const options = document.querySelectorAll(`input[name="option"][data-type="${currentSearchType}"]`);
+      const checkedOptions = Array.from(options).filter(option => option.checked);
+      if (checkedOptions.length === 0) {
+        alert('Please select an option.');
+        return false;
+      }
+      return true;
+    }
+
+    // 서버에서 데이터 가져오기
+    async function fetchData(page = 1) {
+      if (!validateOptions()) return; // 옵션이 선택되지 않으면 데이터를 가져오지 않음
+
+      const query = document.getElementById('searchInput').value;
+      const selectedOption = document.querySelector(`input[name="option"][data-type="${currentSearchType}"]:checked`).value;
+
+      const response = await fetch(`/search?search_options=${encodeURIComponent(selectedOption)}&keywords=${encodeURIComponent(query)}&page=${page}&limit=${itemsPerPage}`);
+      const data = await response.json();
+      renderCards(data); // 카드 내용 렌더링
+      renderPagination(data.totalPages); // 페이지네이션 렌더링
+    }
+
+    // 검색 결과 카드 렌더링
     function renderCards(data) {
       const cardContainer = document.getElementById('cardContainer');
       cardContainer.innerHTML = ''; // 이전 결과 제거
@@ -28,9 +108,9 @@
             <div class="card">
               <div class="card-body">
                 <h5 class="card-title">${item.title}</h5>
-                <h6 class="card-subtitle mb-2 text-muted">${item.subtitle}</h6>
+                <h6 class="card-subtitle mb-2 text-muted">${item.keyword}</h6>
                 <p class="card-text">${item.description}</p>
-                <a href="${item.link}" class="card-link">View Details</a>
+                <a href="${item.url}" class="card-link">View Details</a>
               </div>
             </div>
           </div>
@@ -39,6 +119,7 @@
       });
     }
 
+    // 페이지네이션 렌더링
     function renderPagination(totalPages) {
       const paginationContainer = document.getElementById('pagination');
       paginationContainer.innerHTML = ''; // 이전 네비게이션 제거
@@ -53,23 +134,12 @@
       }
     }
 
+    // 페이지 변경 함수
     function goToPage(page) {
       currentPage = page;
       fetchData(page);
     }
 
-    // 옵션 토글 기능
-    function toggleOptions() {
-      const optionsSection = document.getElementById('optionsSection');
-      const toggleBtn = document.getElementById('toggleBtn');
-      if (optionsSection.style.display === 'none') {
-        optionsSection.style.display = 'block';
-        toggleBtn.textContent = 'Hide Options';
-      } else {
-        optionsSection.style.display = 'none';
-        toggleBtn.textContent = 'Show Options';
-      }
-    }
   </script>
 </head>
 <body>
@@ -77,7 +147,7 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
       <div class="container-fluid">
-        <a class="navbar-brand" href="#">Navbar</a>
+        <a class="navbar-brand" href="#">Darkweb/Osint Project</a>
         <form class="d-flex" onsubmit="event.preventDefault(); currentPage = 1; fetchData();">
           <input id="searchInput" class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
           <button class="btn btn-outline-success" type="submit">Search</button>
@@ -87,27 +157,39 @@
 
     <!-- OSINT and Darkweb Buttons -->
     <div class="my-3">
-      <button class="btn btn-primary" onclick="fetchData(1)">OSINT</button>
-      <button class="btn btn-dark" onclick="fetchData(1)">Darkweb</button>
+      <button id="osintBtn" class="btn btn-primary" onclick="toggleOptions('osint')">OSINT</button>
+      <button id="darkwebBtn" class="btn btn-dark" onclick="toggleOptions('darkweb')">Darkweb</button>
     </div>
 
     <!-- Options Section (Toggleable) -->
-    <div id="optionsSection" style="display: none;">
+    <div id="osintOptions" style="display: none;">
       <div class="my-3">
-        <h5>Select Additional Options:</h5>
+        <h5>Select OSINT Options:</h5>
         <div class="form-check">
-          <input class="form-check-input" type="checkbox" value="Option 1" id="option1">
-          <label class="form-check-label" for="option1">Option 1</label>
+          <input class="form-check-input" type="radio" name="option" value="Option 1" data-type="osint" id="osintOption1" required>
+          <label class="form-check-label" for="osintOption1">Option 1</label>
         </div>
         <div class="form-check">
-          <input class="form-check-input" type="checkbox" value="Option 2" id="option2">
-          <label class="form-check-label" for="option2">Option 2</label>
+          <input class="form-check-input" type="radio" name="option" value="Option 2" data-type="osint" id="osintOption2">
+          <label class="form-check-label" for="osintOption2">Option 2</label>
         </div>
       </div>
     </div>
 
-    <!-- Toggle Button -->
-    <button id="toggleBtn" class="btn btn-secondary" onclick="toggleOptions()">Show Options</button>
+    <div id="darkwebOptions" style="display: none;">
+      <div class="my-3">
+        <h5>Select Darkweb Options:</h5>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="option" value="Option 1" data-type="darkweb" id="darkwebOption1" required>
+          <label class="form-check-label" for="darkwebOption1">Option 1</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="option" value="Option 2" data-type="darkweb" id="darkwebOption2">
+          <label class="form-check-label" for="darkwebOption2">Option 2</label>
+        </div>
+      </div>
+    </div>
+
 
     <!-- Card Section -->
     <div class="row row-cols-1 row-cols-md-3 g-4 mt-3" id="cardContainer">
