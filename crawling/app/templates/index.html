@@ -1,9 +1,125 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search with Options</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
+  <script>
+    let currentPage = 1; // 현재 페이지 번호
+    const itemsPerPage = 6; // 페이지당 항목 수
 
-{% block content %}
-<div class="container">
-  <h1>Welcome!</h1>
-  <hr>
-  <p>Add some content here!</p>
-</div>
-{% endblock %}
+    async function fetchData(page = 1) {
+      const query = document.getElementById('searchInput').value;
+      const searchType = document.querySelector('input[name="searchType"]:checked')?.value || 'osint'; // 선택된 옵션
+      const response = await fetch(`/search?query=${encodeURIComponent(query)}&page=${page}&limit=${itemsPerPage}&searchType=${searchType}`);
+      const data = await response.json();
+      renderCards(data);
+      renderPagination(data.totalPages);
+    }
+
+    function renderCards(data) {
+      const cardContainer = document.getElementById('cardContainer');
+      cardContainer.innerHTML = ''; // 이전 결과 제거
+
+      data.results.forEach(item => {
+        const card = `
+          <div class="col">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">${item.title}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">${item.subtitle}</h6>
+                <p class="card-text">${item.description}</p>
+                <a href="${item.link}" class="card-link">View Details</a>
+              </div>
+            </div>
+          </div>
+        `;
+        cardContainer.innerHTML += card;
+      });
+    }
+
+    function renderPagination(totalPages) {
+      const paginationContainer = document.getElementById('pagination');
+      paginationContainer.innerHTML = ''; // 이전 네비게이션 제거
+
+      for (let i = 1; i <= totalPages; i++) {
+        const pageItem = `
+          <li class="page-item ${i === currentPage ? 'active' : ''}">
+            <button class="page-link" onclick="goToPage(${i})">${i}</button>
+          </li>
+        `;
+        paginationContainer.innerHTML += pageItem;
+      }
+    }
+
+    function goToPage(page) {
+      currentPage = page;
+      fetchData(page);
+    }
+
+    // 옵션 토글 기능
+    function toggleOptions() {
+      const optionsSection = document.getElementById('optionsSection');
+      const toggleBtn = document.getElementById('toggleBtn');
+      if (optionsSection.style.display === 'none') {
+        optionsSection.style.display = 'block';
+        toggleBtn.textContent = 'Hide Options';
+      } else {
+        optionsSection.style.display = 'none';
+        toggleBtn.textContent = 'Show Options';
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">Navbar</a>
+        <form class="d-flex" onsubmit="event.preventDefault(); currentPage = 1; fetchData();">
+          <input id="searchInput" class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+          <button class="btn btn-outline-success" type="submit">Search</button>
+        </form>
+      </div>
+    </nav>
+
+    <!-- OSINT and Darkweb Buttons -->
+    <div class="my-3">
+      <button class="btn btn-primary" onclick="fetchData(1)">OSINT</button>
+      <button class="btn btn-dark" onclick="fetchData(1)">Darkweb</button>
+    </div>
+
+    <!-- Options Section (Toggleable) -->
+    <div id="optionsSection" style="display: none;">
+      <div class="my-3">
+        <h5>Select Additional Options:</h5>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" value="Option 1" id="option1">
+          <label class="form-check-label" for="option1">Option 1</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" value="Option 2" id="option2">
+          <label class="form-check-label" for="option2">Option 2</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toggle Button -->
+    <button id="toggleBtn" class="btn btn-secondary" onclick="toggleOptions()">Show Options</button>
+
+    <!-- Card Section -->
+    <div class="row row-cols-1 row-cols-md-3 g-4 mt-3" id="cardContainer">
+      <!-- Cards will be dynamically injected here -->
+    </div>
+
+    <!-- Pagination -->
+    <nav aria-label="Page navigation" class="mt-4">
+      <ul class="pagination justify-content-center" id="pagination">
+        <!-- Pagination buttons will be dynamically injected here -->
+      </ul>
+    </nav>
+  </div>
+</body>
+</html>
