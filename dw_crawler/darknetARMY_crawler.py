@@ -1,6 +1,25 @@
 from bs4 import BeautifulSoup
 import cloudscraper
 
+    # Tor 프록시 설정
+proxies = {
+        "http": "socks5h://127.0.0.1:9050",
+        "https": "socks5h://127.0.0.1:9050"
+    }
+
+    # HTTP 헤더 설정
+headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+
+    # 기본 URL
+base_url = "http://dna777qhcrxy5sbvk7rkdd2phhxbftpdtxvwibih26nr275cdazx4uyd.onion/whats-new/posts/788219/"
+
+    # 크롤링 데이터 가져오기
+
+
+
+
 def scrape_blackhat_posts(base_url, proxies, headers, pages=2):
 
     # Cloudflare 우회 세션 생성
@@ -52,25 +71,6 @@ def scrape_blackhat_posts(base_url, proxies, headers, pages=2):
 
     return all_threads
 
-# 사용 예시
-if __name__ == "__main__":
-    # Tor 프록시 설정
-    proxies = {
-        "http": "socks5h://127.0.0.1:9050",
-        "https": "socks5h://127.0.0.1:9050"
-    }
-
-    # HTTP 헤더 설정
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-    }
-
-    # 기본 URL
-    base_url = "http://dna777qhcrxy5sbvk7rkdd2phhxbftpdtxvwibih26nr275cdazx4uyd.onion/whats-new/posts/788219/"
-
-    # 크롤링 데이터 가져오기
-    scraped_data = scrape_blackhat_posts(base_url, proxies, headers, pages=3)
-
-    # 결과 출력
-    for data in scraped_data:
-        print(data)
+scraped_data = scrape_blackhat_posts(base_url, proxies, headers, pages=3)
+for data in scraped_data:
+    print(data)
