@@ -16,7 +16,7 @@ headers = {
 base_url = "http://dna777qhcrxy5sbvk7rkdd2phhxbftpdtxvwibih26nr275cdazx4uyd.onion/whats-new/posts/788219/"
 
 
-def scrape_blackhat_posts(base_url, proxies, headers, pages=2):
+def scrape_darknetarmy_posts(base_url, proxies, headers, pages=2):
     # Cloudflare 우회 세션 생성
     scraper = cloudscraper.create_scraper()
     all_threads = []
@@ -68,7 +68,7 @@ def scrape_blackhat_posts(base_url, proxies, headers, pages=2):
 
 
 # 함수 호출 및 결과 출력
-scraped_data = scrape_blackhat_posts(base_url, proxies, headers, pages=3)
+scraped_data = scrape_darknetarmy_posts(base_url, proxies, headers, pages=3)
 
 for data in scraped_data:
     print(data)
