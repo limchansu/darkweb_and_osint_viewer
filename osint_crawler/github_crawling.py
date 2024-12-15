@@ -2,20 +2,27 @@ import requests
 import json
 from datetime import datetime, timedelta
 import os
+from main import create_databases
 
 # 해당 크롤러는 환경 변수에서 API 정보를 가져옵니다.
 # 환경 변수 설정 방법:
 # Windows: 
 #   set GITHUB_TOKEN=<Your API ID>
 
-GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')   # GitHub API 토큰
+GITHUB_TOKEN = ""   # GitHub API 토큰
 GITHUB_API_URL = 'https://api.github.com/search/repositories'   # GitHub Repository 검색 API의 기본 URL
-JSON_FILE_PATH = './dictionary.json'
+JSON_FILE_PATH = './cleaned_keywords.json'
 MIN_KEYWORDS_MATCH = 20  # 최소 10개 키워드 포함
-DAYS_AGO = 10  # 마지막 수정 기준 날짜
+DAYS_AGO = 730  # 마지막 수정 기준 날짜
 
+_, osint_db = create_databases()
 
-# 리포지토리를 날짜 기준으로 필터링하는 함수
+print(osint_db)
+
+collection = osint_db["github"]
+print(collection)
+
+# 리포지토리를 날짜 기준으로 필터링하는 함수(최소 2년 정도로)
 def filter_by_last_update(repositories, days_ago):
     threshold_date = datetime.utcnow() - timedelta(days=days_ago)
     filtered_repos = [
@@ -66,12 +73,10 @@ def main():
     with open(JSON_FILE_PATH, 'r') as file:
         data = json.load(file)
 
-    keywords = data.get('keywords', [])
-    crawled_data = []
-    
+    keywords = data.get('keywords', [])    
     print("Searching GitHub for repositories matching keywords...")
 
-    for keyword in keywords[:10]:
+    for keyword in keywords:
         print(f"\nKeyword: {keyword}")
 
         # 각 키워드에 대한 repository들을 얻어오기
@@ -87,25 +92,17 @@ def main():
                 if match_count >= MIN_KEYWORDS_MATCH:
                     repo_info = {
                         'repo_name': repo['full_name'],
-                        'stars': repo['stargazers_count'],
                         'url': repo['html_url'],
-                        'keywords_matched': match_count,
-                        'description': (repo['description'][:100] + '...') if repo['description'] and len(repo['description']) > 100 else (repo['description'] or 'No description available.')
+                        'description': ((repo['description'])[:100] + '...') if repo['description'] and len(repo['description']) > 100 else (repo['description'] or 'No description available.')
                     }
-                    print(f"\nRepository: {repo['full_name']} - ⭐ {repo['stargazers_count']}")
+                    print(f"\nRepository: {repo['full_name']}")
                     print(f"URL: {repo['html_url']}")
-                    print(f"Keywords matched: {match_count}")
-                    print(f"Description: {repo['description'] or 'No description available.'}\n")
+                    print(f"Description: {repo['description']}\n")
 
-                    # Append the repository info to the crawled_data list
-                    crawled_data.append(repo_info)
+                    result = collection.insert_one(repo_info)
+                    print("Inserted ID : ", result.inserted_id, "\n")
             else:
                 print(f"Could not fetch README for {repo['full_name']}.")
-
-    # Save crawled data to crawled.json
-    with open('crawled.json', 'w') as output_file:
-        json.dump(crawled_data, output_file, indent=4)
-        print(f"\nCrawled data has been saved to crawled.json.")
 
 
 if __name__ == '__main__':
