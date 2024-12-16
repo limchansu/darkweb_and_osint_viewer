@@ -1,0 +1,11 @@
+db.example_collection.insertOne({ title: "Test for async", content: "test number 4" })
+db.example_collection.insertOne({ title: "Test for async", content: "test number 3" })
+db.example_collection.insertOne({ title: "Test for alarm config", content: "test number 2" })
+use example_collection
+db.example_collection.insertOne({ title: "Testing database", content: "This is a test document." })
+db.example_collection.find()
+db.example_collection.insertOne({ title: "Test Title", content: "This is a test document." })
+use example_collection
+db.example_collection.insertOne({ title: "Test Title", content: "This is a test document." })
+use example_collection
+rs.status()
