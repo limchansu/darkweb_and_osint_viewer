@@ -9,6 +9,9 @@ from dw_crawler.daixin_crawler import run as run_daixin
 from dw_crawler.darkleak_crawler import run as run_darkleak
 from dw_crawler.everest_crawler import run as run_everest
 from dw_crawler.island_crawler import run as run_island
+from dw_crawler.abyss_crawler import run as run_abyss
+
+
 
 def setup_database():
     """
@@ -46,4 +49,5 @@ if __name__ == "__main__":
     run_darkleak(db)
     run_everest(db)
     run_island(db)
+    run_abyss(db)
 
