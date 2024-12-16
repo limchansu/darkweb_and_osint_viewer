@@ -1,67 +1,84 @@
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
+from datetime import datetime
 import time
 
-# Selenium 및 Proxy 설정
-PROXY = "127.0.0.1:9050"  # Tor 프록시 주소
-CHROME_OPTIONS = Options()
-CHROME_OPTIONS.add_argument("--headless")  # 브라우저 창 표시 없이 실행
-CHROME_OPTIONS.add_argument("--disable-blink-features=AutomationControlled")  # Selenium 탐지 방지
-CHROME_OPTIONS.add_argument("--disable-gpu")
-CHROME_OPTIONS.add_argument("--no-sandbox")
-CHROME_OPTIONS.add_argument(f"--proxy-server=socks5://{PROXY}")  # Tor 프록시 설정
-CHROME_OPTIONS.add_experimental_option("excludeSwitches", ["enable-automation"])
-CHROME_OPTIONS.add_experimental_option("useAutomationExtension", False)
 
-def scrape_leakbase_posts(url):
-    # WebDriver 실행
-    driver = webdriver.Chrome(options=CHROME_OPTIONS)
-    driver.get(url)
+def run(db):
+    """
+    LeakBase 크롤러 실행 및 MongoDB 컬렉션에 데이터 저장
+    """
+    collection = db["leakbase"]  # MongoDB 컬렉션 선택
 
-    # JavaScript 실행 대기
-    time.sleep(5)
+    # Chrome 옵션 설정
+    options = Options()
+    options.add_argument("--headless")  # 브라우저 창 표시 없이 실행
+    options.add_argument("--disable-blink-features=AutomationControlled")  # Selenium 탐지 방지
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--proxy-server=socks5://127.0.0.1:9050")  # Tor 프록시 설정
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option("useAutomationExtension", False)
 
-    # 페이지 소스 가져오기
-    html_content = driver.page_source
+    # WebDriver 초기화
+    driver = webdriver.Chrome(options=options)
 
-    # BeautifulSoup으로 HTML 파싱
-    soup = BeautifulSoup(html_content, "html.parser")
+    url = "https://leakbase.io/"
+    try:
+        driver.get(url)
 
-    # 게시글 리스트 찾기
-    posts = soup.find_all("li", class_="_xgtIstatistik-satir")
+        # JavaScript 로딩 대기
+        time.sleep(5)
 
-    # 데이터 추출
-    data_list = []
-    for post in posts:
-        # 게시글 제목
-        title_tag = post.find("div", class_="_xgtIstatistik-satir--konu")
-        title = title_tag.text.strip() if title_tag else "N/A"
+        # 페이지 소스 가져오기
+        html_content = driver.page_source
 
-        # 작성자
-        author_tag = post.find("div", class_="_xgtIstatistik-satir--hucre _xgtIstatistik-satir--sonYazan")
-        author = author_tag.find("a", class_="username").text.strip() if author_tag and author_tag.find("a", class_="username") else "N/A"
+        # BeautifulSoup으로 HTML 파싱
+        soup = BeautifulSoup(html_content, "html.parser")
 
-        # 작성 시간
-        time_tag = post.find("div", class_="_xgtIstatistik-satir--zaman")
-        post_time = time_tag.text.strip() if time_tag else "N/A"
+        # 게시글 리스트 찾기
+        posts = soup.find_all("li", class_="_xgtIstatistik-satir")
 
-        # 데이터 저장
-        data_list.append({
-            "Title": title,           
-            "Author": author,         
-            "Posted Time": post_time  
-        })
+        for post in posts:
+            try:
+                # 게시글 제목
+                title_tag = post.find("div", class_="_xgtIstatistik-satir--konu")
+                title = title_tag.text.strip() if title_tag else "N/A"
 
-    # WebDriver 종료
-    driver.quit()
+                # 작성자
+                author_tag = post.find("div", class_="_xgtIstatistik-satir--hucre _xgtIstatistik-satir--sonYazan")
+                author = (
+                    author_tag.find("a", class_="username").text.strip()
+                    if author_tag and author_tag.find("a", class_="username")
+                    else "N/A"
+                )
 
-    return data_list
+                # 작성 시간
+                time_tag = post.find("div", class_="_xgtIstatistik-satir--zaman")
+                post_time = time_tag.text.strip() if time_tag else "N/A"
 
-url = "https://leakbase.io/"
-result = scrape_leakbase_posts(url)
+                # 데이터 객체 생성
+                post_data = {
+                    "title": title,
+                    "author": author,
+                    "posted_time": post_time,
+                    "crawled_time": str(datetime.now()),  # 크롤링 시간 추가
+                }
 
-# 결과 출력
-for data in result:
-    print(data)
+                # 중복 확인 및 데이터 저장
+                if not collection.find_one({"title": title}):
+                    collection.insert_one(post_data)
+                    print(f"데이터 저장 완료: {title}")
+                else:
+                    print(f"중복 데이터로 저장 건너뜀: {title}")
 
+            except Exception as e:
+                print(f"데이터 처리 중 오류 발생: {e}")
+
+    except Exception as e:
+        print(f"크롤링 중 오류 발생: {e}")
+
+    finally:
+        driver.quit()
