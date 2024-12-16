@@ -1,8 +1,11 @@
 import requests
 import json
 from datetime import datetime, timedelta
-import os
-from main import create_databases
+import sys, os
+
+# 실행 시 경로 포함
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
+from connect_db import osint_db
 
 # 해당 크롤러는 환경 변수에서 API 정보를 가져옵니다.
 # 환경 변수 설정 방법:
@@ -14,13 +17,6 @@ GITHUB_API_URL = 'https://api.github.com/search/repositories'   # GitHub Reposit
 JSON_FILE_PATH = './cleaned_keywords.json'
 MIN_KEYWORDS_MATCH = 20  # 최소 10개 키워드 포함
 DAYS_AGO = 730  # 마지막 수정 기준 날짜
-
-_, osint_db = create_databases()
-
-print(osint_db)
-
-collection = osint_db["github"]
-print(collection)
 
 # 리포지토리를 날짜 기준으로 필터링하는 함수(최소 2년 정도로)
 def filter_by_last_update(repositories, days_ago):
@@ -75,6 +71,9 @@ def main():
 
     keywords = data.get('keywords', [])    
     print("Searching GitHub for repositories matching keywords...")
+
+    # DB 접근 객체
+    collection = osint_db["github"]
 
     for keyword in keywords:
         print(f"\nKeyword: {keyword}")

@@ -5,6 +5,11 @@ import time
 import re
 from stem import Signal
 from stem.control import Controller
+import sys, os
+
+# 실행 시 경로 포함
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
+from connect_db import osint_db
 
 # Tor 네트워크를 재시작하여 새로운 IP 할당
 def renew_connection():
@@ -34,7 +39,7 @@ target_categories = [
 ]
 
 headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"}
-JSON_FILE_PATH = "./dictionary.json"
+JSON_FILE_PATH = "./cleaned_keywords.json"
 
 # 첫 번째 필터링 : a 태그(제목)에서 키워드 포함 여부 확인
 def check_page(a_tag, keywords):
@@ -51,7 +56,7 @@ def check_snippet_for_keywords(a_tag, keywords):
         if snippet_p:
             snippet_text = snippet_p.get_text(strip=True)
             keyword_count = sum(1 for keyword in keywords if keyword in snippet_text)
-            return keyword_count >= 3  # 키워드가 3개 이상 포함된 경우 True 반환
+            return keyword_count >= 5   # 키워드가 5개 이상 포함된 경우 True 반환
     return False
 
 # 초기에 페이지 수를 가져오는 함수
@@ -64,12 +69,16 @@ def get_total_pages(soup):
             return int(match.group(1))  # 마지막 페이지 번호 반환
     return 1  # 페이지 번호가 없으면 1페이지로 가정
 
-# 페이지 검색 시작
+# 페이지 검색 및 DB에 데이터 저장
 def search_page(target_url):
     with open(JSON_FILE_PATH, 'r') as dictionary_json:
         data = json.load(dictionary_json)
     keywords = data.get("keywords", [])
 
+    # DB 접근 객체
+    collection = osint_db["tuts4you"]
+
+    # 크롤링 시작
     try:
         # 첫 페이지로 접속해 전체 페이지 수 가져오기
         response = tor_request(target_url, headers=headers)
@@ -105,6 +114,13 @@ def search_page(target_url):
                 if filtered_links:
                     for link in filtered_links:
                         print(f"Title: {link['title']}\nLink: {link['url']}\n")
+                        link_info = {
+                            "title" : link["title"],
+                            "url" : link["url"]
+                        }
+
+                        result = collection.insert_one(link_info)
+                        print("Inserted ID : ", result.inserted_id, "\n")
                 else:
                     print("-" * 20)
                     print("No matching posts found on this page.\n")

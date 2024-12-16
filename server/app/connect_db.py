@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
 
-def create_databases():
+def connect_databases():
     try:
         # MongoDB 서버 연결 (연결 확인을 위해 timeout 설정 추가)
         client = MongoClient("mongodb://localhost:27017/", serverSelectionTimeoutMS=5000)
@@ -45,5 +45,6 @@ def create_databases():
     except ServerSelectionTimeoutError:
         print("MongoDB 서버에 연결할 수 없습니다. 서버가 실행 중인지 확인하세요!")
 
-if __name__ == "__main__":
-    dw_db, osint_db = create_databases()
+
+
+dw_db, osint_db = connect_databases()
