@@ -11,43 +11,42 @@ from dw_crawler.everest_crawler import run as run_everest
 from dw_crawler.island_crawler import run as run_island
 from dw_crawler.abyss_crawler import run as run_abyss
 
-
-
-def setup_database():
+def setup_database(db_name, collection_names):
     """
     MongoDB 데이터베이스 및 컬렉션 생성
     """
-    print("[INFO] MongoDB 설정 시작")
+    print(f"[INFO] MongoDB 설정 시작: {db_name}")
     client = MongoClient("mongodb://localhost:27017/")  # MongoDB 연결
-    db = client["darkweb"]  # 데이터베이스 이름
-
-    # 컬렉션 목록
-    collections = ["abyss", "blackbasta", "blacksuit", "breachdetector", "ctifeeds",
-                   "daixin", "darkleak", "darknetARMY", "everest", "island",
-                   "leakbase", "lockbit", "play", "rhysida", "htdark"]
+    db = client[db_name]  # 데이터베이스 이름
 
     # 컬렉션 생성
-    for collection in collections:
+    for collection in collection_names:
         if collection not in db.list_collection_names():
             db.create_collection(collection)
-            print(f"[INFO] {collection} 컬렉션 생성 완료!")
+            print(f"[INFO] {collection} 컬렉션 생성 완료! ({db_name})")
 
-    print("[INFO] MongoDB 설정 완료")
+    print(f"[INFO] MongoDB 설정 완료: {db_name}")
     return db
 
 if __name__ == "__main__":
-    # 데이터베이스 및 컬렉션 초기화
-    db = setup_database()
+    db1_collections = ["abyss", "blackbasta", "blacksuit", "breachdetector", "ctifeeds",
+                       "daixin", "darkleak", "darknetARMY", "everest", "island",
+                       "leakbase", "lockbit", "play", "rhysida", "htdark"]
+    db1 = setup_database("darkweb", db1_collections)
+
+    # 첫 번째 DB에서 크롤러 실행
+    scrape_htdark_posts(db1, pages=10)
+    scrape_darknetarmy_posts(db1, pages=3)
+    run_blacksuit(db1)
+    run_blackbasta(db1)
+    run_ctifeeds(db1)
+    run_daixin(db1)
+    run_darkleak(db1)
+    run_everest(db1)
+    run_island(db1)
+    run_abyss(db1)
 
 
-    scrape_htdark_posts(db, pages=10)
-    scrape_darknetarmy_posts(db, pages=3)
-    run_blacksuit(db)
-    run_blackbasta(db)    
-    run_ctifeeds(db)
-    run_daixin(db)
-    run_darkleak(db)
-    run_everest(db)
-    run_island(db)
-    run_abyss(db)
+    db2_collections = ["github", "tuts4you", "0x00org"]
+    db2 = setup_database("osint", db2_collections)
 
