@@ -3,8 +3,13 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
+from pymongo import MongoClient
 import time
 
+# MongoDB 설정
+client = MongoClient("mongodb://localhost:27017/")
+db = client["darkweb"]
+collection = db["lockbit"]
 
 # Selenium Tor 프록시 설정
 options = Options()
@@ -14,10 +19,9 @@ options.add_argument("--disable-gpu")  # GPU 비활성화
 options.add_argument("--no-sandbox")  # 샌드박스 비활성화 (Linux 환경에서 필수)
 
 service = Service('./chromedriver')  # chromedriver 경로 설정
-driver = webdriver.Chrome(service=service, options=options)
+driver = webdriver.Chrome(options=options) # service=Service 인가? 그거 지움
 
 def lockbit_crawler():
-    results = []
     url = 'http://lockbit3olp7oetlc4tl5zydnoluphh7fvdt5oa6arcp2757r7xkutid.onion'
     driver.get(url)
 
@@ -27,12 +31,27 @@ def lockbit_crawler():
     # BeautifulSoup로 HTML 파싱
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     items = soup.find_all('a', class_='post-block')
+    
     for item in items:
-        result = {}
-        result['title'] = item.find('div', class_='post-title').text.strip()
-        result['content'] = item.find('div', class_='post-block-text').text.strip()
-        result['post_url'] = url + item['href']
-        result['update_date'] = item.find('div', class_='updated-post-date').text.strip().replace('\xa0', '').replace('Updated: ', '')
-        results.append(result)
+        try:
+            # 데이터 추출
+            result = {
+                "title": item.find('div', class_='post-title').text.strip(),
+                "content": item.find('div', class_='post-block-text').text.strip(),
+                "post_url": url + item['href'],
+                "update_date": item.find('div', class_='updated-post-date').text.strip().replace('\xa0', '').replace('Updated: ', '')
+            }
+            
+            # MongoDB로 실시간 저장
+            collection.insert_one(result)
+            print(f"데이터 저장 완료: {result}")
+        except Exception as e:
+            print(f"데이터 처리 중 오류 발생: {e}")
+
     driver.quit()  # 브라우저 종료
-    return results
+
+if __name__ == "__main__":
+    try:
+        lockbit_crawler()
+    finally:
+        client.close()  # MongoDB 연결 종료
