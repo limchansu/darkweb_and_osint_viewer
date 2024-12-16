@@ -17,6 +17,7 @@ def renew_connection(password):
             print("New Tor connection requested.")
     except Exception as e:
         print(f"Failed to renew Tor connection: {e}")
+        sys.exit("Tor network connection failed. Exiting the program.")
 
 # Tor 프록시를 통한 요청 함수
 def tor_request(url, headers=None, retries=3):
