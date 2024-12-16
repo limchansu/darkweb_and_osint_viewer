@@ -1,7 +1,7 @@
 import json
-import os
 import requests
 from jsonschema import validate, ValidationError
+from datetime import datetime
 
 # JSON 데이터 URL 목록 및 카테고리 이름
 json_sources = [
@@ -27,40 +27,39 @@ schema = {
     "required": ["categories", "name", "url", "source"]
 }
 
-# 데이터 저장용 리스트
-all_data = []
+def run(db):
+    """
+    ctifeeds 크롤러 실행 및 MongoDB 컬렉션에 데이터 저장
+    """
+    collection = db["ctifeeds"]  # MongoDB 컬렉션 선택
 
-def fetch_json_data():
     for source in json_sources:
         try:
+            # JSON 데이터 가져오기
             response = requests.get(source["url"], timeout=10)
             response.raise_for_status()
-            
-            # JSON 데이터를 로드
             data = response.json()
 
             # 카테고리 항목 추가 및 데이터 처리
             for item in data:
                 item["categories"] = source["categories"]
+                item["Crawled Time"] = str(datetime.now())  # 크롤링 시간 추가
 
                 # JSON Schema 검증
                 try:
                     validate(instance=item, schema=schema)
-                    all_data.append(item)
+
+                    # 중복 데이터 확인 및 저장
+                    if not collection.find_one({"categories": item["categories"], "name": item["name"]}):
+                        collection.insert_one(item)
+                        print(f"Saved: {item['name']} in category {item['categories']}")
+                    else:
+                        print(f"Skipped (duplicate): {item['name']} in category {item['categories']}")
+
                 except ValidationError as e:
                     print(f"데이터 검증 실패 ({source['categories']}): {e.message}")
 
             print(f"데이터 수집 완료: {source['categories']}")
+
         except Exception as e:
             print(f"데이터 수집 중 오류 발생 ({source['categories']}): {e}")
-
-    # 결과 데이터를 JSON 파일로 저장 (주석 처리)
-    # with open("ctifeeds_data.json", "w", encoding="utf-8") as f:
-    #     json.dump(all_data, f, ensure_ascii=False, indent=4)
-    # print("ctifeeds_data.json 파일 저장 완료.")
-
-    return all_data
-
-if __name__ == "__main__":
-    result = fetch_json_data()
-    print(result)

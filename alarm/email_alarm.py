@@ -3,61 +3,65 @@ import smtplib
 from email.mime.text import MIMEText
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
-from pymongo.change_stream import ChangeStream
+
+# 이메일 정보 설정
+EMAIL_SENDER = "tastyTiramisu110@gmail.com"
+EMAIL_PASSWORD = "duca bjnc ynsf mmup"
 
 # MongoDB 연결 설정
-MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017/")  # MongoDB URI (환경변수 기본값 사용)
-DB_NAME = os.environ.get("DB_NAME", "darkweb_db")  # DB 이름
-COLLECTION_NAME = os.environ.get("COLLECTION_NAME", "example_collection")  # Collection 이름
+MONGO_URI = "mongodb://mongo1:30001,mongo2:30002,mongo3:30003/?replicaSet=my-rs"
+DB_NAME = "example_collection"
+COLLECTION_NAME = "example_collection"
 
-# 환경변수로 이메일 정보 가져오기
-EMAIL_SENDER = os.environ.get("EMAIL_SENDER")  # 보내는 이메일
-EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")  # 이메일 비밀번호 (앱 비밀번호 사용 권장)
-EMAIL_RECIPIENT = os.environ.get("EMAIL_RECIPIENT")  # 받는 이메일
-
-# MongoDB 연결
-try:
-    client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
-    db = client[DB_NAME]
-    collection = db[COLLECTION_NAME]
-    print(f"MongoDB 연결 성공: {MONGO_URI}")
-except ServerSelectionTimeoutError as e:
-    print(f"MongoDB 연결 실패: {e}")
-    exit(1)
-
-# 이메일 보내기 함수
+# 이메일 전송 함수
 def send_email(subject, body):
     try:
         msg = MIMEText(body, "plain")
         msg["Subject"] = subject
         msg["From"] = EMAIL_SENDER
-        msg["To"] = EMAIL_RECIPIENT
+        msg["To"] = EMAIL_SENDER
 
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-            server.sendmail(EMAIL_SENDER, EMAIL_RECIPIENT, msg.as_string())
-        print("이메일 전송 성공!")
+            server.sendmail(EMAIL_SENDER, EMAIL_SENDER, msg.as_string())
+        print("[INFO] 이메일 전송 성공!")
     except Exception as e:
-        print(f"이메일 전송 실패: {e}")
+        print(f"[ERROR] 이메일 전송 실패: {e}")
 
-# Change Streams로 업데이트 확인
+# MongoDB 변경 사항 감지 및 알림 발신
 def watch_collection():
     try:
-        with collection.watch() as stream:  # Change Streams 활성화
-            print("컬렉션 변경 사항 모니터링 시작...")
+        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+        db = client[DB_NAME]
+        collection = db[COLLECTION_NAME]
+
+        print(f"[INFO] {COLLECTION_NAME} 컬렉션 변경 사항 모니터링 시작...")
+        changed_titles = []  # 변경된 title 저장 리스트
+
+        with collection.watch() as stream:
             for change in stream:
-                print("변경 사항 발생:", change)
+                print("[INFO] 변경 사항 발생:", change)
                 operation_type = change["operationType"]
 
-                # 업데이트가 발생한 경우 이메일 알림
+                # insert, update, replace 이벤트에 대해 title만 수집
                 if operation_type in ["insert", "update", "replace"]:
                     document_key = change["documentKey"]["_id"]
-                    updated_fields = change.get("updateDescription", {}).get("updatedFields", {})
-                    subject = f"MongoDB 업데이트 알림: {operation_type}"
-                    body = f"문서 ID: {document_key}\n변경된 필드: {updated_fields}"
+                    updated_document = collection.find_one({"_id": document_key})
+
+                    # title이 존재하는 경우만 수집
+                    if updated_document and "title" in updated_document:
+                        changed_titles.append(updated_document["title"])
+
+                # 변경 사항이 여러 개라면, 누적된 title 리스트로 알림 발송
+                if changed_titles:
+                    subject = f"[MongoDB 알림] {COLLECTION_NAME} 컬렉션 변경 사항"
+                    body = "다음 데이터가 변경되었습니다:\n" + "\n".join(changed_titles)
                     send_email(subject, body)
+                    changed_titles.clear()  # 알림 발송 후 리스트 초기화
+    except ServerSelectionTimeoutError as e:
+        print(f"[ERROR] MongoDB 연결 실패: {e}")
     except Exception as e:
-        print(f"Change Stream 모니터링 중 오류 발생: {e}")
+        print(f"[ERROR] Change Stream 모니터링 중 오류 발생: {e}")
 
 if __name__ == "__main__":
     watch_collection()
