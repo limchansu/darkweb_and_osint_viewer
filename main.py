@@ -10,6 +10,12 @@ from dw_crawler.darkleak_crawler import run as run_darkleak
 from dw_crawler.everest_crawler import run as run_everest
 from dw_crawler.island_crawler import run as run_island
 from dw_crawler.abyss_crawler import run as run_abyss
+from dw_crawler.lockbit_crawler import run as run_lockbit
+from dw_crawler.rhysida_crawler import run as run_rhysida
+from dw_crawler.play_crawler import run as run_play
+from dw_crawler.leakbase_crawler import run as run_leakbase
+
+
 
 def setup_database(db_name, collection_names):
     """
@@ -45,7 +51,10 @@ if __name__ == "__main__":
     run_everest(db1)
     run_island(db1)
     run_abyss(db1)
-
+    run_rhysida(db1)
+    run_play(db1)
+    run_lockbit(db1)
+    run_leakbase(db1)
 
     db2_collections = ["github", "tuts4you", "0x00org"]
     db2 = setup_database("osint", db2_collections)
