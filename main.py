@@ -16,6 +16,7 @@ from dw_crawler.play_crawler import run as run_play
 from dw_crawler.leakbase_crawler import run as run_leakbase
 from osint_crawler.tuts4you_crawling import run as run_tuts4you
 from osint_crawler.github_crawling import run as run_github
+from osint_crawler.x00org_crawler import run as run_0x00org
 
 
 def setup_database(db_name, collection_names):
@@ -62,3 +63,6 @@ if __name__ == "__main__":
     
     run_tuts4you(db2)
     run_github(db2)
+    run_0x00org(db2)
+
+
