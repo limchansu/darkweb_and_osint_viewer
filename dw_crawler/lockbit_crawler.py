@@ -19,7 +19,7 @@ options.add_argument("--disable-gpu")  # GPU 비활성화
 options.add_argument("--no-sandbox")  # 샌드박스 비활성화 (Linux 환경에서 필수)
 
 service = Service('./chromedriver')  # chromedriver 경로 설정
-driver = webdriver.Chrome(options=options) # service=Service 인가? 그거 지움
+driver = webdriver.Chrome(options=options)
 
 def lockbit_crawler():
     url = 'http://lockbit3olp7oetlc4tl5zydnoluphh7fvdt5oa6arcp2757r7xkutid.onion'
@@ -42,9 +42,12 @@ def lockbit_crawler():
                 "update_date": item.find('div', class_='updated-post-date').text.strip().replace('\xa0', '').replace('Updated: ', '')
             }
             
-            # MongoDB로 실시간 저장
-            collection.insert_one(result)
-            print(f"데이터 저장 완료: {result}")
+            # 중복 확인 및 MongoDB로 저장
+            if not collection.find_one({"title": result["title"]}):
+                collection.insert_one(result)
+                print(f"데이터 저장 완료: {result}")
+            else:
+                print(f"중복 데이터로 저장 건너뜀: {result['title']}")
         except Exception as e:
             print(f"데이터 처리 중 오류 발생: {e}")
 
