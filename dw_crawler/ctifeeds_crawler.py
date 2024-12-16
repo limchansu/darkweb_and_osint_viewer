@@ -18,13 +18,13 @@ schema = {
     "type": "object",
     "properties": {
         "categories": {"type": "string"},
-        "name": {"type": "string"},
+        "title": {"type": "string"},
         "url": {"type": "string"},
         "source": {"type": "string"},
         "screenshot": {"type": ["string", "null"]},
         "urlscan": {"type": ["string", "null"]}
     },
-    "required": ["categories", "name", "url", "source"]
+    "required": ["categories", "title", "url", "source"]
 }
 
 def run(db):
@@ -50,11 +50,11 @@ def run(db):
                     validate(instance=item, schema=schema)
 
                     # 중복 데이터 확인 및 저장
-                    if not collection.find_one({"categories": item["categories"], "name": item["name"]}):
+                    if not collection.find_one({"categories": item["categories"], "title": item["title"]}):
                         collection.insert_one(item)
-                        print(f"Saved: {item['name']} in category {item['categories']}")
+                        print(f"Saved: {item['title']} in category {item['categories']}")
                     else:
-                        print(f"Skipped (duplicate): {item['name']} in category {item['categories']}")
+                        print(f"Skipped (duplicate): {item['title']} in category {item['categories']}")
 
                 except ValidationError as e:
                     print(f"데이터 검증 실패 ({source['categories']}): {e.message}")
