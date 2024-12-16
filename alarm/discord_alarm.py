@@ -1,50 +1,79 @@
 import asyncio
-
+import pytz
 import discord
 from discord.ext import commands
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
+
 
 # MongoDB 연결 설정
-client = MongoClient("mongodb://localhost:27017/")
-db = client["your_database_name"]
-collection = db["your_collection_name"]
+client = AsyncIOMotorClient("mongodb://mongo1:30001,mongo2:30002,mongo3:30003/?replicaSet=my-rs")
 
 TOKEN = ''
 
 # 필요한 intents 설정
 intents = discord.Intents.default()
-intents.message_content = True  # 메시지 내용 접근
 
-# 봇 초기화
 bot = commands.Bot(command_prefix='!', intents=intents)
 # 채널 ID 설정
-CHANNEL_ID = 1317725156386410619  # 알림을 보낼 채널의 ID
+DARKWEB_CHANNEL_ID = 1317725156386410619  # 다크웹 채널 아이디
+OSINT_CHANNEL_ID = 1318099564116578305 # 오신트 채널 아이디
 
-@bot.event
-async def on_ready():
-    print(f'Logged in as {bot.user}')
-    # MongoDB Change Stream 감지 루프 시작
-    asyncio.create_task(monitor_database())
+async def darkweb_monitor(db):
+    pipeline = [{"$match": {"operationType": "insert"}}]
 
+    try:
+        # 비동기 컨텍스트 매니저 사용
+        async with db.watch(pipeline=pipeline) as stream:
+            print("darweb 데이터베이스 모니터링 중")
+            async for change in stream:
+                # Change Stream 이벤트 처리
+                new_document = change.get("fullDocument")
+                print("데이터 추가 됨 :", new_document)
+                site_name = change.get("ns").get("coll")
+                timestamp = new_document["_id"].generation_time
+                local_timezone = pytz.timezone("Asia/Seoul")
+                local_timestamp = timestamp.astimezone(local_timezone)
+                channel = bot.get_channel(DARKWEB_CHANNEL_ID)
+                if channel:
+                    await channel.send(f"📢 **다크웹에서 유출된 정보 감지**\n**제목**: {new_document.get('title', '제목 없음')}\n**유출한 사이트** : {site_name}\n**UTC 시간**: {timestamp}\n**한국 시간**: {local_timestamp}")
+                else:
+                    print("채널을 찾을 수 없습니다.")
+    except Exception as e:
+        print(f"오류 발생: {e}")
+        await asyncio.sleep(5)
 
-async def monitor_database():
-    """MongoDB Change Stream으로 데이터 추가 이벤트 감지"""
-    pipeline = [{"$match": {"operationType": "insert"}}]  # Insert 이벤트만 필터링
+async def osint_monitor(db):
+    pipeline = [{"$match": {"operationType": "insert"}}]
 
-    with collection.watch(pipeline=pipeline) as stream:
-        print("MongoDB 데이터 변경 감지 중...")
-        for change in stream:
-            # 새로 추가된 데이터 가져오기
-            new_document = change["fullDocument"]
-            print("새 데이터 추가 감지:", new_document)
-
-            # Discord 채널로 알림 보내기
-            channel = bot.get_channel(CHANNEL_ID)
-            if channel:
-                message = f"새 데이터가 추가되었습니다: {new_document}"
-                await channel.send(message)
-            else:
-                print("채널을 찾을 수 없습니다.")
+    try:
+        # 비동기 컨텍스트 매니저 사용
+        async with db.watch(pipeline=pipeline) as stream:
+            print("OSINT 데이터베이스 모니터링 중")
+            async for change in stream:
+                # Change Stream 이벤트 처리
+                new_document = change.get("fullDocument")
+                print("데이터 추가 됨 :", new_document)
+                site_name = change.get("ns").get("coll")
+                timestamp = new_document["_id"].generation_time
+                local_timezone = pytz.timezone("Asia/Seoul")
+                local_timestamp = timestamp.astimezone(local_timezone)
+                channel = bot.get_channel(DARKWEB_CHANNEL_ID)
+                if channel:
+                    await channel.send(
+                        f"📢 **OSINT 정보 감지**\n**제목**: {new_document.get('title', '제목 없음')}\n**사이트** : {site_name}\n**UTC 시간**: {timestamp}\n**한국 시간**: {local_timestamp}")
+                else:
+                    print("채널을 찾을 수 없습니다.")
+    except Exception as e:
+        print(f"오류 발생: {e}")
+        await asyncio.sleep(5)
 
 # 봇 실행
-bot.run(TOKEN)
+def discord_agent():
+    @bot.event
+    async def on_ready():
+        print(f'Logged in as {bot.user}')
+        asyncio.create_task(darkweb_monitor(client['web_crawler']))
+        asyncio.create_task(osint_monitor(client['osint']))
+
+    bot.run(TOKEN)
+
