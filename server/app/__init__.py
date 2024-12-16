@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS  # 추가된 부분
 import sys, os
 
 # 실행 시 경로 포함
@@ -6,6 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
 from connect_db import connect_databases
 
 app = Flask(__name__)
+CORS(app)  # 모든 도메인에 대해 CORS를 허용
 
 @app.route('/')
 def index():
@@ -14,16 +16,14 @@ def index():
 @app.route('/search', methods=['POST'])
 def search():
     # 요청 파라미터
-    keywords = request.args.get('keywords', '').strip()  # 검색어
-    category = request.args.get('category', '')
-    option = request.args.get('option', '')
+    data = request.get_json()  # JSON 데이터 파싱
 
-    print("option : ", option)
-    print("category : " , category)
-    print("keywords : ", keywords)
+    keywords = data.get('keywords', '').strip()  # 검색어
+    category = data.get('category', '')
+    option = data.get('option', '')
 
     # 데이터베이스 연결
-    osint_db, dw_db = connect_databases()
+    dw_db, osint_db = connect_databases()
 
     # 초기화
     db_collection = None
@@ -44,7 +44,7 @@ def search():
     else:
         cursor = db_collection.find()
 
-    # 결과 가공
+    # DB 탐색 결과 가공
     for doc in cursor:
         result = {
             "_id": str(doc.get("_id")),  # ObjectId를 문자열로 변환

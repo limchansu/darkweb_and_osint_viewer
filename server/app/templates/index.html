@@ -11,6 +11,72 @@
     .option-btn.active { background-color: #5cb85c; }
     .option-btn:hover { background-color: #4cae4c; }
     #osintBtn, #darkwebBtn { margin-right: 10px; }
+    .pagination .active .page-link {
+      background-color: #5cb85c;
+      border-color: #5cb85c;
+    }
+    /* 카드 컨테이너 설정 */
+    .card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100%; /* 카드 높이를 일정하게 설정 */
+      min-height: 250px; /* 최소 높이를 설정 */
+      border-radius: 10px;
+      background-color: #f8f9fa;
+      overflow: hidden;
+    }
+
+    /* 카드의 이미지가 일정한 크기를 유지하도록 설정 */
+    .card-img-top {
+      width: 100%;
+      height: 150px; /* 이미지 고정 높이 */
+      object-fit: cover; /* 이미지를 비율에 맞게 잘라서 표시 */
+    }
+
+    /* 카드의 텍스트 부분 */
+    .card-body {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex-grow: 1; /* 남은 공간을 채우도록 설정 */
+      padding: 15px;
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: bold;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden; /* 제목이 길면 생략 표시 */
+    }
+
+    .card-text {
+      font-size: 0.9rem;
+      color: #6c757d;
+      flex-grow: 1; /* 내용이 많으면 남은 공간을 채우도록 설정 */
+      overflow: hidden; /* 텍스트가 카드 안에서 넘치지 않게 숨김 */
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+    }
+
+    .btn {
+      margin-top: auto; /* 버튼을 카드 하단에 위치하도록 설정 */
+    }
+
+    /* 카드 컨테이너에서 카드들을 일정하게 배치 */
+    .row {
+      margin-left: 0;
+      margin-right: 0;
+    }
+
+    /* 카드 크기를 일정하게 유지하기 위한 추가 설정 */
+    .col-md-3 {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 15px; /* 카드 간격 */
+    }
   </style>
   <script>
     // 옵션 데이터
@@ -25,6 +91,8 @@
 
     // 현재 선택된 옵션 관리 (한 번에 하나만 선택 가능)
     let selectedOption = null;
+    let currentPage = 1;
+    let searchResults = [];
 
     // 옵션 버튼 생성 및 컨테이너 초기화 함수
     function toggleOptions(category) {
@@ -66,6 +134,57 @@
       }
     }
 
+    // 카드 생성 및 결과 렌더링
+    function renderCards(results) {
+      const cardContainer = document.getElementById('cardContainer');
+      cardContainer.innerHTML = ''; // 기존 카드들 제거
+
+      // 카드 16개씩 나누어 보여주기 위해 페이지네이션 처리
+      const cardsPerPage = 16;
+      const totalPages = Math.ceil(results.length / cardsPerPage);
+      const indexOfLastCard = currentPage * cardsPerPage;
+      const indexOfFirstCard = indexOfLastCard - cardsPerPage;
+      const currentCards = results.slice(indexOfFirstCard, indexOfLastCard);
+
+      // 카드 렌더링
+      currentCards.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'col-md-3'; // 4개씩 가로로 배치 (1페이지에 16개)
+        card.innerHTML = `
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">${item.title}</h5>
+              <p class="card-text">${item.keyword || "No description available"}</p>
+              <a href="${item.url}" class="btn btn-primary" target="_blank">Go to Link</a>
+            </div>
+          </div>
+        `;
+        cardContainer.appendChild(card);
+      });
+
+      // 페이지네이션 업데이트
+      renderPagination(totalPages);
+    }
+
+    // 페이지네이션 처리
+    function renderPagination(totalPages) {
+      const pagination = document.getElementById('pagination');
+      pagination.innerHTML = ''; // 기존 페이지네이션 제거
+
+      for (let i = 1; i <= totalPages; i++) {
+        const pageItem = document.createElement('li');
+        pageItem.className = `page-item ${i === currentPage ? 'active' : ''}`;
+        pageItem.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i})">${i}</a>`;
+        pagination.appendChild(pageItem);
+      }
+    }
+
+    // 페이지 변경
+    function changePage(pageNumber) {
+      currentPage = pageNumber;
+      renderCards(searchResults); // 검색 결과 재렌더링
+    }
+
     // 검색 요청 함수
     async function handleSearch(event) {
       event.preventDefault();
@@ -86,7 +205,7 @@
       console.log('Sending search request with data:', postData);
 
       try {
-        const response = await fetch('localhost:5000/search', {
+        const response = await fetch('http://localhost:5000/search', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -100,7 +219,12 @@
 
         const result = await response.json();
         console.log('Search Results:', result);
-        // 여기서 결과를 처리하는 로직 추가 가능
+
+        // results 배열을 저장하고 렌더링
+        searchResults = result.results; // result에서 results 배열을 추출
+        currentPage = 1; // 첫 페이지로 초기화
+        renderCards(searchResults); // 카드 렌더링
+
       } catch (error) {
         console.error('Error during search:', error);
       }
@@ -112,6 +236,7 @@
     });
   </script>
 </head>
+
 <body>
   <div class="container">
     <!-- Navbar -->
