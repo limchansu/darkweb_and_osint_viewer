@@ -6,133 +6,109 @@
   <title>Search with Options</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
   <style>
-    /* 스타일은 기존과 동일하게 유지 */
     .options-container { margin-bottom: 20px; }
-    .toggle-switch { display: flex; gap: 10px; }
     .option-btn { background-color: #333; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 5px; transition: all 0.3s ease-in-out; }
     .option-btn.active { background-color: #5cb85c; }
     .option-btn:hover { background-color: #4cae4c; }
-    .btn.active { box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); border-color: #0056b3; }
-    #toggleBtn { background-color: #6c757d; color: white; border: none; border-radius: 5px; padding: 10px 20px; font-size: 14px; transition: background-color 0.3s, transform 0.2s; position: relative; z-index: 1000; }
-    #toggleBtn:hover { background-color: #5a6268; cursor: pointer; transform: scale(1.05); }
-    #toggleBtn:active { background-color: #545b62; transform: scale(0.95); }
-    #toggleBtn.fixed { position: fixed; top: 20px; right: 20px; }
+    #osintBtn, #darkwebBtn { margin-right: 10px; }
   </style>
-  
   <script>
-    let currentPage = 1;
-    const itemsPerPage = 10;
-    let currentSearchType = 'osint'; // 초기 값 설정
-
-    // OSINT와 Darkweb 옵션을 동적으로 생성하는 함수
+    // 옵션 데이터
     const options = {
-      osint: ['0x00org', 'github', 'tuts4you'],
-      darkweb: ['abyss', 'blackbasta', 'blacksuit', 'play', 'rhysida']
+      osint: ["0x00org", "github", "tuts4you"],
+      darkweb: [
+        "abyss", "blackbasta", "blacksuit", "breachdetector", "ctifeeds",
+        "daixin", "darkleak", "darknetARMY", "everest", "island",
+        "leakbase", "lockbit", "play", "rhysida"
+      ]
     };
 
-    function createOptionButtons(type) {
-      const container = document.getElementById(`${type}Options`);
-      container.innerHTML = ''; // 기존 내용 제거
-      options[type].forEach(option => {
-        const button = document.createElement('button');
-        button.classList.add('option-btn');
-        button.textContent = option.charAt(0).toUpperCase() + option.slice(1);
-        button.dataset.value = option;
-        button.onclick = () => toggleOption(type, option);
-        container.appendChild(button);
-      });
-    }
+    // 현재 선택된 옵션 관리 (한 번에 하나만 선택 가능)
+    let selectedOption = null;
 
-    // 검색 유형에 맞는 버튼 활성화 및 옵션 표시
-    function toggleOptions(type) {
-      currentSearchType = type;
-      document.querySelectorAll('.btn').forEach(btn => btn.classList.remove('active'));
-      document.getElementById(`${type}Btn`).classList.add('active');
-      document.getElementById('osintOptions').style.display = type === 'osint' ? 'block' : 'none';
-      document.getElementById('darkwebOptions').style.display = type === 'darkweb' ? 'block' : 'none';
-      createOptionButtons(type); // 옵션 버튼 재생성
-    }
+    // 옵션 버튼 생성 및 컨테이너 초기화 함수
+    function toggleOptions(category) {
+      const container = document.getElementById(`${category}Options`);
+      const otherCategory = category === 'osint' ? 'darkweb' : 'osint';
+      const otherContainer = document.getElementById(`${otherCategory}Options`);
 
-    // 선택된 옵션을 활성화
-    function toggleOption(type, value) {
-      const buttons = document.querySelectorAll(`#${type}Options .option-btn`);
-      buttons.forEach(button => button.classList.remove('active'));
-      const selectedButton = document.querySelector(`#${type}Options .option-btn[data-value="${value}"]`);
-      selectedButton.classList.add('active');
-    }
+      // 다른 카테고리의 옵션을 숨김
+      otherContainer.innerHTML = '';
 
-    // 서버에서 데이터를 가져오는 함수
-    async function fetchData(page = 1) {
-      const query = document.getElementById('searchInput').value;
-      const selectedOption = document.querySelector(`#${currentSearchType}Options .option-btn.active`)?.dataset.value;
+      // 현재 카테고리의 옵션 토글
+      if (container.innerHTML) {
+        container.innerHTML = '';
+      } else {
+        container.innerHTML = '';
 
-      // 옵션이 선택되지 않은 경우 경고창을 띄우기
-      if (!selectedOption) {
-        return; // 데이터를 가져오지 않고 종료
-      }
+        options[category].forEach(option => {
+          const button = document.createElement('button');
+          button.className = 'btn btn-secondary m-1 option-btn';
+          button.textContent = option;
 
-      // 서버 요청 : 나중에 POST로 변경하기
-      const response = await fetch(`/search?search_options=${encodeURIComponent(selectedOption)}&keywords=${encodeURIComponent(query)}&page=${page}&limit=${itemsPerPage}`);
-      const data = await response.json();
-      renderCards(data);
-      renderPagination(data.totalPages);
-    }
+          // 버튼 클릭 이벤트
+          button.onclick = () => {
+            // 모든 버튼에서 active 클래스 제거
+            document.querySelectorAll('.option-btn').forEach(btn => {
+              btn.classList.remove('active');
+            });
 
-    // 옵션 유효성 검사
-    function validateOptions() {
-      const selectedOption = document.querySelector(`#${currentSearchType}Options .option-btn.active`);
-      if (!selectedOption) {
-        alert(`Please select a ${currentSearchType} collection.`);
-        return false;
-      }
-      return true;
-    }
+            // 선택 상태 업데이트
+            selectedOption = { category, option };
+            button.classList.add('active');
 
-    // 카드 렌더링
-    function renderCards(data) {
-      const cardContainer = document.getElementById('cardContainer');
-      cardContainer.innerHTML = '';
-      data.results.forEach(item => {
-        const card = `
-          <div class="col">
-            <div class="card">
-              <div class="card-body">
-                <h5 class="card-title">${item.title}</h5>
-                <h6 class="card-subtitle mb-2 text-muted">${item.keyword}</h6>
-                <p class="card-text">${item.description}</p>
-                <a href="${item.url}" class="card-link">View Details</a>
-              </div>
-            </div>
-          </div>
-        `;
-        cardContainer.innerHTML += card;
-      });
-    }
+            // 상태 출력 (디버깅용)
+            console.log('Selected Option:', selectedOption);
+          };
 
-    // 페이지네이션 렌더링
-    function renderPagination(totalPages) {
-      const paginationContainer = document.getElementById('pagination');
-      paginationContainer.innerHTML = '';
-      for (let i = 1; i <= totalPages; i++) {
-        const pageItem = `
-          <li class="page-item ${i === currentPage ? 'active' : ''}">
-            <button class="page-link" onclick="goToPage(${i})">${i}</button>
-          </li>
-        `;
-        paginationContainer.innerHTML += pageItem;
+          container.appendChild(button);
+        });
       }
     }
 
-    // 페이지 변경 함수
-    function goToPage(page) {
-      currentPage = page;
-      fetchData(page);
+    // 검색 요청 함수
+    async function handleSearch(event) {
+      event.preventDefault();
+
+      const searchInput = document.getElementById('searchInput').value;
+
+      if (!selectedOption || !searchInput) {
+        alert('Please select a category, an option, and enter a keyword.');
+        return;
+      }
+
+      const postData = {
+        category: selectedOption.category,
+        option: selectedOption.option,
+        keywords: searchInput
+      };
+
+      console.log('Sending search request with data:', postData);
+
+      try {
+        const response = await fetch('localhost:5000/search', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(postData)
+        });
+
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const result = await response.json();
+        console.log('Search Results:', result);
+        // 여기서 결과를 처리하는 로직 추가 가능
+      } catch (error) {
+        console.error('Error during search:', error);
+      }
     }
 
     // 초기화 및 기본 설정
     document.addEventListener('DOMContentLoaded', () => {
       toggleOptions('osint'); // 기본은 OSINT 선택
-      fetchData(); // 기본 데이터 로드
     });
   </script>
 </head>
@@ -142,7 +118,7 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
       <div class="container-fluid">
         <a class="navbar-brand" href="#">Darkweb/Osint Project</a>
-        <form class="d-flex" onsubmit="event.preventDefault(); fetchData();">
+        <form class="d-flex" onsubmit="handleSearch(event);">
           <input id="searchInput" class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
           <button class="btn btn-outline-success" type="submit">Search</button>
         </form>
@@ -152,7 +128,7 @@
     <!-- OSINT and Darkweb Buttons -->
     <div class="my-3">
       <button id="osintBtn" class="btn btn-primary" onclick="toggleOptions('osint')">OSINT</button>
-      <button id="darkwebBtn" class="btn btn-dark" onclick="toggleOptions('darkweb')">Darkweb</button>
+      <button id="darkwebBtn" class="btn btn-primary" onclick="toggleOptions('darkweb')">Darkweb</button>
     </div>
 
     <!-- OSINT Options -->

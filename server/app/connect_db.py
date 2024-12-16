@@ -14,10 +14,10 @@ def connect_databases():
         db1 = client['darkweb']
         print("darkweb 생성 완료!")
 
-        collection_name1 = ["abyss", "blackbasta", "blacksuit", "breachdetector", "ctifeeds", "daixin", "darkleak", "darknetARMY",
+        dw_collections = ["abyss", "blackbasta", "blacksuit", "breachdetector", "ctifeeds", "daixin", "darkleak", "darknetARMY",
                            "everest", "island", "leakbase", "lockbit", "play", "rhysida"]
 
-        for dw in collection_name1:
+        for dw in dw_collections:
             if dw not in db1.list_collection_names():
                 db1.create_collection(dw)
                 print(f"Collection {dw} 생성 완료")
@@ -31,9 +31,9 @@ def connect_databases():
         db2 = client['osint']
         print("osint 생성 완료!")
 
-        collection_name2 = ["0x00org", "github", "tuts4you"]
+        osint_collections = ["0x00org", "github", "tuts4you"]
 
-        for osint in collection_name2:
+        for osint in osint_collections:
             if osint not in db2.list_collection_names():
                 db2.create_collection(osint)
                 print(f"Collection {osint} 생성 완료")
