@@ -45,30 +45,30 @@ def scrape_darknetarmy_posts(db, pages=3):
         for thread in threads:
             # 게시글 제목
             title_tag = thread.find('div', class_='structItem-title')
-            title = title_tag.get_text(strip=True) if title_tag else "N/A"
+            title = title_tag.get_text(strip=True) if title_tag else None
 
             # 작성자 이름
             author_tag = thread.find('a', class_='username')
-            author = author_tag.get_text(strip=True) if author_tag else "N/A"
+            author = author_tag.get_text(strip=True) if author_tag else None
 
             # 작성 시간
             time_tag = thread.find('time')
-            post_time = time_tag["title"] if time_tag and "title" in time_tag.attrs else "N/A"
+            post_time = time_tag["title"] if time_tag and "title" in time_tag.attrs else None
 
             # 데이터 생성
             post_data = {
-                "Title": title,
-                "Author": author,
-                "Posted Time": post_time,
-                "Crawled Time": str(datetime.now())
+                "title": title,
+                "author": author,
+                "posted Time": post_time,
+                "crawled Time": str(datetime.now())
             }
 
             # 중복 데이터 확인 및 저장
-            if not collection.find_one({"Title": title, "Posted Time": post_time}):
+            if not collection.find_one({"title": title, "posted Time": post_time}):
                 collection.insert_one(post_data)
                 print(f"Saved: {post_data}")
             else:
-                print(f"Skipped (duplicate): {post_data['Title']}")
+                print(f"Skipped (duplicate): {post_data['title']}")
 
         print(f"Page {page} data collection complete.")
         print("-" * 40)
