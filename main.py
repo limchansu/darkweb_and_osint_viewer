@@ -1,40 +1,64 @@
-import os
 from pymongo import MongoClient
+from datetime import datetime
 from dw_crawler.htdark_crawler import scrape_htdark_posts
 from dw_crawler.darknetARMY_crawler import scrape_darknetarmy_posts
 from dw_crawler.ctifeeds_crawler import run as run_ctifeeds
-from email_alarm import watch_collection
+from dw_crawler.blacksuit_crawler import run as run_blacksuit
+from dw_crawler.blackbasta_crawler import run as run_blackbasta
+from dw_crawler.daixin_crawler import run as run_daixin
+from dw_crawler.darkleak_crawler import run as run_darkleak
+from dw_crawler.everest_crawler import run as run_everest
+from dw_crawler.island_crawler import run as run_island
+from dw_crawler.abyss_crawler import run as run_abyss
+from dw_crawler.lockbit_crawler import run as run_lockbit
+from dw_crawler.rhysida_crawler import run as run_rhysida
+from dw_crawler.play_crawler import run as run_play
+from dw_crawler.leakbase_crawler import run as run_leakbase
+from osint_crawler.tuts4you_crawling import run as run_tuts4you
+from osint_crawler.github_crawling import run as run_github
 
-# MongoDB 연결 설정
-MONGO_URI = "mongodb://localhost:27017/"
-DB_NAME = "darkweb"
 
-# 크롤러 실행 및 데이터 적재 함수
-def setup_and_run_crawlers():
-    client = MongoClient(MONGO_URI)
-    db = client[DB_NAME]
+def setup_database(db_name, collection_names):
+    """
+    MongoDB 데이터베이스 및 컬렉션 생성
+    """
+    print(f"[INFO] MongoDB 설정 시작: {db_name}")
+    client = MongoClient("mongodb://localhost:27017/")  # MongoDB 연결
+    db = client[db_name]  # 데이터베이스 이름
 
-    # htdark 크롤러 실행
-    print("[INFO] htdark 크롤러 실행 시작")
-    scrape_htdark_posts(db, pages=10)
-    print("[INFO] htdark 크롤러 실행 완료")
+    # 컬렉션 생성
+    for collection in collection_names:
+        if collection not in db.list_collection_names():
+            db.create_collection(collection)
+            print(f"[INFO] {collection} 컬렉션 생성 완료! ({db_name})")
 
-    # darknetARMY 크롤러 실행
-    print("[INFO] darknetARMY 크롤러 실행 시작")
-    scrape_darknetarmy_posts(db, pages=3)
-    print("[INFO] darknetARMY 크롤러 실행 완료")
+    print(f"[INFO] MongoDB 설정 완료: {db_name}")
+    return db
 
-    # ctifeeds 크롤러 실행
-    print("[INFO] ctifeeds 크롤러 실행 시작")
-    run_ctifeeds(db)
-    print("[INFO] ctifeeds 크롤러 실행 완료")
-
-# main 함수
 if __name__ == "__main__":
-    # 크롤러 실행 및 데이터 업데이트
-    setup_and_run_crawlers()
+    db1_collections = ["abyss", "blackbasta", "blacksuit", "breachdetector", "ctifeeds",
+                       "daixin", "darkleak", "darknetARMY", "everest", "island",
+                       "leakbase", "lockbit", "play", "rhysida", "htdark"]
+    db1 = setup_database("darkweb", db1_collections)
 
-    # MongoDB 컬렉션 변경 사항 감지 및 이메일 알림
-    watch_collection(MONGO_URI, DB_NAME, "htdark")        # htdark 컬렉션 모니터링
-    watch_collection(MONGO_URI, DB_NAME, "darknetARMY")   # darknetARMY 컬렉션 모니터링
-    watch_collection(MONGO_URI, DB_NAME, "ctifeeds")      # ctifeeds 컬렉션 모니터링
+    # 첫 번째 DB에서 크롤러 실행
+    scrape_htdark_posts(db1, pages=10)
+    scrape_darknetarmy_posts(db1, pages=3)
+    run_blacksuit(db1)
+    run_blackbasta(db1)
+    run_ctifeeds(db1)
+    run_daixin(db1)
+    run_darkleak(db1)
+    run_everest(db1)
+    run_island(db1)
+    run_abyss(db1)
+    run_rhysida(db1)
+    run_play(db1)
+    run_lockbit(db1)
+    run_leakbase(db1)
+
+    db2_collections = ["github", "tuts4you", "0x00org"]
+    db2 = setup_database("osint", db2_collections)
+    
+    run_tuts4you(db2)
+    run_github(db2)
