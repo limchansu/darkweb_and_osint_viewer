@@ -45,30 +45,30 @@ def scrape_htdark_posts(db, pages=10):
         for thread in threads:
             # 게시글 제목
             title_tag = thread.find('div', class_='structItem-title')
-            title = title_tag.get_text(strip=True) if title_tag else "N/A"
+            title = title_tag.get_text(strip=True) if title_tag else None
 
             # 작성자 이름
             author_tag = thread.find('a', class_='username')
-            author = author_tag.get_text(strip=True) if author_tag else "N/A"
+            author = author_tag.get_text(strip=True) if author_tag else None
 
             # 작성 시간
             time_tag = thread.find('li', class_='structItem-startDate')
-            post_time = time_tag.get_text(strip=True) if time_tag else "N/A"
+            post_time = time_tag.get_text(strip=True) if time_tag else None
 
             # 데이터 생성
             post_data = {
-                "Title": title,
-                "Author": author,
-                "Posted Time": post_time,
-                "Crawled Time": str(datetime.now())  # 크롤링 시간 추가
+                "title": title,
+                "author": author,
+                "posted Time": post_time,
+                "crawled Time": str(datetime.now())  # 크롤링 시간 추가
             }
 
             # 중복 데이터 확인 및 저장
-            if not collection.find_one({"Title": title, "Posted Time": post_time}):
+            if not collection.find_one({"title": title, "posted Time": post_time}):
                 collection.insert_one(post_data)
                 print(f"Saved: {post_data}")
             else:
-                print(f"Skipped (duplicate): {post_data['Title']}")
+                print(f"Skipped (duplicate): {post_data['title']}")
 
         print(f"Page {page} data collection complete.")
         print("-" * 40)
