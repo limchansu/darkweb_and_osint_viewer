@@ -45,19 +45,19 @@ def run(db):
             try:
                 # 게시글 제목
                 title_tag = post.find("div", class_="_xgtIstatistik-satir--konu")
-                title = title_tag.text.strip() if title_tag else "N/A"
+                title = title_tag.text.strip() if title_tag else None
 
                 # 작성자
                 author_tag = post.find("div", class_="_xgtIstatistik-satir--hucre _xgtIstatistik-satir--sonYazan")
                 author = (
                     author_tag.find("a", class_="username").text.strip()
                     if author_tag and author_tag.find("a", class_="username")
-                    else "N/A"
+                    else None
                 )
 
                 # 작성 시간
                 time_tag = post.find("div", class_="_xgtIstatistik-satir--zaman")
-                post_time = time_tag.text.strip() if time_tag else "N/A"
+                post_time = time_tag.text.strip() if time_tag else None
 
                 # 데이터 객체 생성
                 post_data = {
