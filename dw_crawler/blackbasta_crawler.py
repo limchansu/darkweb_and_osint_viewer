@@ -1,12 +1,10 @@
-import os
 import asyncio
-from datetime import datetime
-from jsonschema import validate, ValidationError
-from pymongo import MongoClient
 from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
+from jsonschema import validate, ValidationError
+from datetime import datetime
+from fake_useragent import UserAgent
 
-# JSON Schema 정의
 schema = {
     "type": "object",
     "properties": {
@@ -18,104 +16,88 @@ schema = {
     "required": ["title", "url", "description"],
 }
 
-async def crawl_page(category_url, proxy_address, schema, collection):
-    """
-    개별 페이지를 비동기적으로 크롤링하는 함수 (Playwright 사용)
-    """
-    try:
-        async with async_playwright() as p:
-            # Proxy와 User-Agent를 설정한 브라우저 context 생성
-            browser = await p.chromium.launch(headless=True, proxy={
-                "server": f"socks5://{proxy_address}"
-            })
-            context = await browser.new_context(user_agent=(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
-            ))
-
-            page = await context.new_page()
-            print(f"[INFO] Navigating to {category_url}...")
-            await page.goto(category_url, timeout=120000)
-
-            # 페이지 로딩 완료 대기
-            try:
-                await page.wait_for_selector(".title", timeout=60000)
-                print("[INFO] .title selector found.")
-            except Exception:
-                print("[WARNING] .title selector not found. Check the page structure.")
-
-            # 페이지 내용 출력 (디버깅)
-            content = await page.content()
-            print(f"[DEBUG] Page content length: {len(content)}")
-
-            # BeautifulSoup으로 HTML 파싱
-            soup = BeautifulSoup(content, "html.parser")
-            posts = soup.find_all("div", class_="title")
-
-            for post in posts:
-                try:
-                    title_element = post.find("a", class_="blog_name_link")
-                    if not title_element:
-                        continue
-
-                    title = title_element.text.strip()
-                    url = title_element["href"].strip()
-
-                    # Description 추출
-                    description_element = post.find_next("p", {"data-v-md-line": "3"})
-                    description = (
-                        description_element.get_text(strip=True)
-                        if description_element
-                        else ""
-                    )
-
-                    # 데이터 생성
-                    post_data = {
-                        "title": title,
-                        "url": url,
-                        "description": description,
-                        "crawled_time": str(datetime.now()),
-                    }
-
-                    # JSON Schema 검증
-                    try:
-                        validate(instance=post_data, schema=schema)
-
-                        # 중복 확인 및 데이터 저장
-                        if not collection.find_one({"title": title, "url": url}):
-                            collection.insert_one(post_data)
-                            print(f"Saved: {title}")
-
-                    except ValidationError as e:
-                        print(f"[ERROR] blackbasta_crawler.py - crawl_page(): {e.message}")
-
-                except Exception as e:
-                    print(f"[ERROR] blackbasta_crawler.py - crawl_page(): {e}")
-
-            await browser.close()
-
-    except Exception as e:
-        print(f"[ERROR] blackbasta_crawler.py - crawl_page(): {e}")
-
 async def blackbasta(db):
-    """
-    BlackBasta 크롤러 실행 및 MongoDB 컬렉션에 비동기적 저장
-    """
-    collection = db["blackbasta"]  # MongoDB 컬렉션 선택
-    proxy_address = "127.0.0.1:9050"
-
-    # 크롤링 대상 URL
+    collection = db["blackbasta"]
+    ua = UserAgent()
+    random_user_agent = ua.random
     base_url = "http://stniiomyjliimcgkvdszvgen3eaaoz55hreqqx6o77yvmpwt7gklffqd.onion"
     category_url = f"{base_url}/"
 
-    # 비동기 실행
-    tasks = [crawl_page(category_url, proxy_address, schema, collection)]
-    await asyncio.gather(*tasks)
+    proxy_address = "127.0.0.1:9050"
+
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True, proxy={
+            "server": f"socks5://{proxy_address}"
+        })
+        context = await browser.new_context(user_agent=random_user_agent)
+        page = await context.new_page()
+
+        try:
+            await page.goto(category_url, timeout=60000)
+            await asyncio.sleep(7)
+            while True:
+                content = await page.content()
+                soup = BeautifulSoup(content, "html.parser")
+                posts = soup.find_all("div", class_="title")
+                for post in posts:
+                    try:
+                        title_element = post.find("a", class_="blog_name_link")
+                        if not title_element:
+                            continue
+
+                        title = title_element.text.strip()
+                        url = title_element["href"].strip()
+
+                        # Description 추출
+                        description_element = post.find_next("p", {"data-v-md-line": "3"})
+                        description = (
+                            description_element.get_text(strip=True)
+                            if description_element
+                            else ""
+                        )
+
+                        post_data = {
+                            "title": title,
+                            "url": url,
+                            "description": description,
+                            "crawled_time": str(datetime.now()),
+                        }
+
+                        try:
+                            validate(instance=post_data, schema=schema)
+
+                            if not await collection.find_one({"title": title, "url": url}):
+                                await collection.insert_one(post_data)
+                                print(f"Saved: {title}")
+                            else:
+                                print(f"Skipped (duplicate): {title}")
+
+                        except ValidationError as e:
+                            print(f"[ERROR] blackbasta_crawler - blackbasta: {e.message}")
+
+                    except Exception as e:
+                        print(f"[ERROR] blackbasta_crawler - blackbasta: {e}")
+                next_button = page.locator('div.next-page-btn')
+                if next_button:
+                    await next_button.click()
+                    await asyncio.sleep(3)
+                else:
+                    break
+        except Exception as e:
+            print(f"[ERROR] blackbasta_crawler - blackbasta: {e}")
+        finally:
+            await browser.close()
+
+# 실행 예시
+def main():
+    import motor.motor_asyncio
+
+    async def start():
+        client = motor.motor_asyncio.AsyncIOMotorClient("mongodb://mongo1:30001,mongo2:30002,mongo:30003/?replicaSet=my-rs")
+        db = client["darkweb"]
+        await blackbasta(db)
+
+    asyncio.run(start())
 
 if __name__ == "__main__":
-    # MongoDB 연결 설정
-    mongo_client = MongoClient("mongodb://localhost:27017/")
-    db = mongo_client["your_database_name"]
-
-    # 비동기 실행
-    asyncio.run(blackbasta(db))
+    main()
