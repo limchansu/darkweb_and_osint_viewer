@@ -1,3 +1,5 @@
+# 사이트 닫힘.....
+
 from requests_tor import RequestsTor
 from bs4 import BeautifulSoup
 from datetime import datetime
