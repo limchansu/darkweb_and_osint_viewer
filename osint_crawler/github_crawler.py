@@ -3,7 +3,7 @@ import aiohttp
 import json
 from datetime import datetime, timedelta
 
-GITHUB_TOKEN = "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"
+GITHUB_TOKEN = ""
 GITHUB_API_URL = 'https://api.github.com/search/repositories'
 JSON_FILE_PATH = './osint_crawler/cleaned_keywords.json'
 MIN_KEYWORDS_MATCH = 20
