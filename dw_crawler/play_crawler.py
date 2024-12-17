@@ -86,13 +86,14 @@ async def play(db):
                         result["rar_password"] = info_text[password_index + len("Rar password: "):].strip() if password_index != -1 else ""
 
                         if not await collection.find_one({"title": result["title"]}):
-                            await collection.insert_one(result)
+                            print(result)
+                            print(await collection.insert_one(result))
 
                     except Exception as e:
-                        print(f"[ERROR] rhysida_crawler.py - play(): {e}")
+                        print(f"[ERROR] play_crawler.py - play(): {e}")
 
         except Exception as e:
-            print(f"[ERROR] rhysida_crawler.py - play(): {e}")
+            print(f"[ERROR] play_crawler.py - play(): {e}")
 
 
 

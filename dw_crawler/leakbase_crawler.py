@@ -35,7 +35,8 @@ async def leakbase(db):
                 }
 
                 if title and not await collection.find_one({"title": title}):
-                    await collection.insert_one(post_data)
+                    print(post_data)
+                    print(await collection.insert_one(post_data))
 
         except Exception as e:
             print(f"[ERROR] leakbase_crawler.py - leakbase(): {e}")

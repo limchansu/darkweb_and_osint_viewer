@@ -29,7 +29,8 @@ async def lockbit(db):
                     }
 
                     if not await collection.find_one({"title": result["title"]}):
-                        await collection.insert_one(result)
+                        print(result)
+                        print(await collection.insert_one(result))
 
                 except Exception as e:
                     print(f"[ERROR] lockbit_crawler.py - lockbit(): {e}")

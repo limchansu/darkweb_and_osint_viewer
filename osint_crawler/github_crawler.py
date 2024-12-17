@@ -79,4 +79,5 @@ async def github(db):
 
                         existing = await collection.find_one({"repo_name": repo_info['repo_name']})
                         if not existing:
-                            await collection.insert_one(repo_info)
+                            print(repo_info)
+                            print(await collection.insert_one(repo_info))
