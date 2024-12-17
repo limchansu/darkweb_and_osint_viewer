@@ -45,6 +45,8 @@ async def process_page(db, html, show):
                 links = item.find_all('a')
                 result['links'] = [link.get('href') for link in links if link.get('href')]
 
+                if show:
+                    print(f'daixin: {result}')
 
                 if not await collection.find_one({"title": result['title'], "company_url": result['company_url']}):
                     obj = await collection.insert_one(result)
@@ -65,5 +67,5 @@ async def daixin(db, show=False):
         html = await fetch_page(session, url)
 
         if html:
-            await process_page(db, html)
+            await process_page(db, html, show)
 

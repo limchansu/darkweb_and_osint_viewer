@@ -63,7 +63,8 @@ async def process_page(db, html, base_url, show):
 
                 # JSON Schema 검증
                 validate(instance=post_data, schema=SCHEMA)
-
+                if show:
+                    print(f'darkleak: {post_data}')
                 # 중복 확인 및 데이터 저장
                 if not await collection.find_one({"file_name": file_name, "url": full_url}):
                     obj = await collection.insert_one(post_data)

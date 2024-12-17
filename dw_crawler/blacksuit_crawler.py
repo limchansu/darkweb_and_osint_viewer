@@ -56,7 +56,8 @@ async def blacksuit(db, show=False):
                         link_tags = link_div.find_all('a')
                         links = [link.get('href') for link in link_tags if link.get('href')]
                     result['links'] = links
-
+                    if show:
+                        print(f'blacksuit: {result}')
                     if not await collection.find_one({"title": result['title'], "post_url": result['post_url']}):
                         obj = await collection.insert_one(result)
                         if show:

@@ -42,7 +42,8 @@ async def crawl_page(base_url, proxy_address, schema, collection, show):
                 # JSON Schema 검증
                 try:
                     validate(instance=post_data, schema=schema)
-
+                    if show:
+                        print(f'abyss: {post_data}')
                     # 중복 확인 및 데이터 저장
                     if not await collection.find_one({"title": title, "description": description}):
                         obj = await collection.insert_one(post_data)

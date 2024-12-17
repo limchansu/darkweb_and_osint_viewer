@@ -84,7 +84,8 @@ async def play(db, show=False):
                                     result["links"].append(f"http{link.strip()}")
 
                         result["rar_password"] = info_text[password_index + len("Rar password: "):].strip() if password_index != -1 else ""
-
+                        if show:
+                            print(f'play: {result}')
                         if not await collection.find_one({"title": result["title"]}):
                             obj = await collection.insert_one(result)
                             if show:

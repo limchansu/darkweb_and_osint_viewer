@@ -123,13 +123,16 @@ async def x00org(db, show=False):
             matched_posts = match_keywords_in_titles(posts, keywords)
             for post in matched_posts:
                 if await verify_keywords_in_content(session, post["url"], post["keywords"].split(", ")):
+                    post_data = {
+                        "title": post["title"],
+                        "url": post["url"],
+                        "keywords": post["keywords"],
+                        "crawled_time": str(datetime.now())
+                    }
+                    if show:
+                        print(f'github: {post_data}')
                     if not await collection.find_one({"title": post["title"]}):
-                        post_data = {
-                            "title": post["title"],
-                            "url": post["url"],
-                            "keywords": post["keywords"],
-                            "crawled_time": str(datetime.now())
-                        }
+
 
                         obj = await collection.insert_one(post_data)
                         if show:

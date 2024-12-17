@@ -33,7 +33,8 @@ async def leakbase(db, show=False):
                     "author": author,
                     "posted_time": post_time,
                 }
-
+                if show:
+                    print(f'leakbase: {post_data}')
                 if title and not await collection.find_one({"title": title}):
                     obj = await collection.insert_one(post_data)
                     if show:

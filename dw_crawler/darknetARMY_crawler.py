@@ -8,7 +8,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 async def fetch_page(session, url):
 
     try:
-        async with session.get(url, timeout=15) as response:
+        async with session.get(url, timeout=30) as response:
             response.raise_for_status()
             return await response.text()
     except Exception as e:
@@ -46,7 +46,8 @@ async def process_page(db, session, base_url, show):
                 "author": author,
                 "posted Time": post_time,
             }
-
+            if show:
+                print(f'darknetARMY: {post_data}')
             if title and not await collection.find_one({"title": title, "posted Time": post_time}):
                 obj = await collection.insert_one(post_data)
                 if show:

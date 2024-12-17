@@ -66,7 +66,8 @@ async def blackbasta(db, show=False):
 
                         try:
                             validate(instance=post_data, schema=schema)
-
+                            if show:
+                                print(f'blackbasta: {post_data}')
                             if not await collection.find_one({"title": title, "url": url}):
                                 obj = await collection.insert_one(post_data)
                                 if show:
@@ -81,7 +82,7 @@ async def blackbasta(db, show=False):
                 if next_button:
                     try:
                         await next_button.click(timeout=10000)
-                        await asyncio.sleep(3)
+                        await asyncio.sleep(10)
                     except playwright.async_api.TimeoutError as e:
                         return
                 else:

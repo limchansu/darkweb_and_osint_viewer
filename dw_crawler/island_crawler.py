@@ -56,7 +56,8 @@ async def island(db, show=False):
                         }
 
                         validate(instance=post_data, schema=schema)
-
+                        if show:
+                            print(f'island: {post_data}')
                         if not await collection.find_one({"title": title, "url": post_url}):
                             obj = await collection.insert_one(post_data)
                             if show:

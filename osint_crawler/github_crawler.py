@@ -76,7 +76,8 @@ async def github(db, show=False):
                             'url': repo['html_url'],
                             'description': (repo['description'] or 'No description available.')[:100],
                         }
-
+                        if show:
+                            print(f'github: {repo_info}')
                         existing = await collection.find_one({"repo_name": repo_info['repo_name']})
                         if not existing:
                             obj = await collection.insert_one(repo_info)

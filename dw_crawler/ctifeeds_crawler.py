@@ -19,13 +19,13 @@ schema = {
     "type": "object",
     "properties": {
         "categories": {"type": "string"},
-        "name": {"type": "string"},
+        "title": {"type": "string"},
         "url": {"type": "string"},
         "source": {"type": "string"},
         "screenshot": {"type": ["string", "null"]},
         "urlscan": {"type": ["string", "null"]},
     },
-    "required": ["categories", "name", "url", "source"],
+    "required": ["categories", "title", "url", "source"],
 }
 
 async def fetch_json(session, source):
@@ -33,7 +33,7 @@ async def fetch_json(session, source):
     비동기적으로 JSON 데이터를 가져오는 함수
     """
     try:
-        async with session.get(source["url"], timeout=10) as response:
+        async with session.get(source["url"], timeout=30) as response:
             response.raise_for_status()
             data = await response.json()
             return source["categories"], data
@@ -48,12 +48,13 @@ async def process_data(db, source, data, show):
     collection = db["ctifeeds"]
     for item in data:
         item["categories"] = source
-        item["Crawled Time"] = str(datetime.now())  # 크롤링 시간 추가
 
         # JSON Schema 검증 및 저장
         try:
             validate(instance=item, schema=schema)
-            if not await collection.find_one({"categories": item["categories"], "name": item["name"]}):
+            if show:
+                print(f'ctifeeds: {item}')
+            if not await collection.find_one({"categories": item["categories"], "title": item["title"]}):
                 obj = await collection.insert_one(item)
                 if show:
                     print('ctifeeds insert success ' + str(obj.inserted_id))

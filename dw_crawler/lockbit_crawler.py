@@ -12,7 +12,7 @@ async def lockbit(db, show=False):
         page = await browser.new_page()
 
         try:
-            await page.goto(url, timeout=120000)
+            await page.goto(url, timeout=60000)
             await asyncio.sleep(10)
             html_content = await page.content()
             soup = BeautifulSoup(html_content, "html.parser")
@@ -27,7 +27,8 @@ async def lockbit(db, show=False):
                         "update_date": item.find("div", class_="updated-post-date")
                                         .text.strip().replace("\xa0", "").replace("Updated: ", ""),
                     }
-
+                    if show:
+                        print(f'lockbit: {result}')
                     if not await collection.find_one({"title": result["title"]}):
                         obj = await collection.insert_one(result)
                         if show:

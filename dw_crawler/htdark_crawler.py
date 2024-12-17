@@ -48,6 +48,8 @@ async def htdark(db, show=False):
                 "author": author,
                 "posted Time": post_time,
             }
+            if show:
+                print(f'htdark: {post_data}')
             if not await collection.find_one({"title": title, "posted Time": post_time}):
                 obj = await collection.insert_one(post_data)
                 if show:

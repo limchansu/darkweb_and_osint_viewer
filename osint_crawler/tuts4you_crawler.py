@@ -69,12 +69,14 @@ async def search_page(session, collection, target_url, keywords, show):
                 if check_page(a_tag, keywords) and check_snippet_for_keywords(a_tag, keywords):
                     title = a_tag.get("title")
                     url = a_tag.get("href")
+                    post_data = {
+                        "title": title,
+                        "url": url,
+                        "crawled_time": str(datetime.utcnow())
+                    }
+                    if show:
+                        print(f'tuts4you: {post_data}')
                     if not await collection.find_one({"title": title}):  # 중복 확인
-                        post_data = {
-                            "title": title,
-                            "url": url,
-                            "crawled_time": str(datetime.utcnow())
-                        }
                         obj = await collection.insert_one(post_data)
                         if show:
                             print('tuts4you insert success ' + str(obj.inserted_id))

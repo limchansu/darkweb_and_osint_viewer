@@ -46,7 +46,8 @@ async def rhysida(db, show=False):
                     "content": content,
                     "links": links,
                 }
-
+                if show:
+                    print(f'rhysida: {post_data}')
                 if not await collection.find_one({"title": title}):
                     obj = await collection.insert_one(post_data)
                     if show:
