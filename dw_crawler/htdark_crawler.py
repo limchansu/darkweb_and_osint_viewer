@@ -24,7 +24,7 @@ async def fetch_page(url, proxies, headers):
     return await loop.run_in_executor(None, fetch_page_sync, url, proxies, headers)
 
 
-async def htdark_crawler(db):
+async def htdark(db):
     """
     비동기 크롤러 실행 및 MongoDB에 데이터 저장
     """
