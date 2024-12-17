@@ -1,49 +1,55 @@
-from requests_tor import RequestsTor
+import asyncio
+from aiohttp_socks import ProxyConnector
+from aiohttp import ClientSession, ClientTimeout
 from bs4 import BeautifulSoup
-from datetime import datetime
+import chardet
 
-# Tor Requests 설정
-rt = RequestsTor(tor_ports=(9050,), tor_cport=9051)
 
-def run(db):
-    """
-    Rhysida 크롤러 실행 및 MongoDB 컬렉션에 데이터 저장
-    """
-    collection = db["rhysida"]  # MongoDB 컬렉션 선택
-    url = 'http://rhysidafohrhyy2aszi7bm32tnjat5xri65fopcxkdfxhi4tidsg7cad.onion/archive.php'
 
+async def fetch_page(session, url):
     try:
-        # 페이지 요청 및 HTML 파싱
-        r = rt.get(url)
-        r.raise_for_status()
-        soup = BeautifulSoup(r.text, 'html.parser')
+        async with session.get(url, timeout=ClientTimeout(total=60)) as response:
+            response.raise_for_status()
+            content = await response.read()
+            detected_encoding = chardet.detect(content)['encoding']
+            if not detected_encoding:
+                detected_encoding = 'utf-8'
+            return content.decode(detected_encoding, errors='ignore')
+    except Exception as e:
+        print(f"[ERROR] rhysida_crawler.py - fetch_page(): {e}")
+        return None
 
-        # 데이터 추출
+
+async def rhysida(db):
+    collection = db["rhysida"]
+    url = 'http://rhysidafohrhyy2aszi7bm32tnjat5xri65fopcxkdfxhi4tidsg7cad.onion/archive.php'
+    proxy = "socks5://127.0.0.1:9050"
+
+    connector = ProxyConnector.from_url(proxy)
+
+    async with ClientSession(connector=connector) as session:
+        html = await fetch_page(session, url)
+        if not html:
+            return
+
+        soup = BeautifulSoup(html, 'html.parser')
         items = soup.find_all('div', class_="col-10")
+
         for item in items:
             try:
-                # 게시글 정보 추출
                 title = item.find('div', class_='m-2 h4').text.strip()
                 content = item.select_one('div.m-2:not(.h4)').text.strip()
                 links = [link['href'] for link in item.find_all('a', href=True)] or []
 
-                # 데이터 생성
                 post_data = {
                     "title": title,
                     "content": content,
                     "links": links,
-                    "crawled_time": str(datetime.now())  # 크롤링 시간 추가
                 }
 
-                # 중복 확인 및 데이터 저장
-                if not collection.find_one({"title": title}):
-                    collection.insert_one(post_data)
-                    print(f"Saved: {title}")
-                else:
-                    print(f"Skipped (duplicate): {title}")
+                if not await collection.find_one({"title": title}):
+                    await collection.insert_one(post_data)
 
             except Exception as e:
-                print(f"데이터 처리 중 오류 발생: {e}")
+                print(f"[ERROR] rhysida_crawler.py - rhysida(): {e}")
 
-    except Exception as e:
-        print(f"크롤링 중 오류 발생: {e}")
