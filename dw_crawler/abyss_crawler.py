@@ -58,7 +58,6 @@ async def crawl_page(base_url, proxy_address, schema, collection):
     except Exception as e:
         print(f"[ERROR] abyss_crawler.py - crawl_page(): {e}")
 
-
 async def abyss(db):
     """
     Abyss 크롤러 실행 및 MongoDB 컬렉션에 데이터 저장 (비동기 실행)

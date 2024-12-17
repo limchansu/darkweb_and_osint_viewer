@@ -29,6 +29,7 @@ async def fetch_page(page, url):
         await page.goto(url, timeout=60000)
         await asyncio.sleep(3)  # 페이지 로드 대기
         return await page.content()
+
     except Exception as e:
         print(f"[ERROR] darkleak_crawler.py - fetch_page(): {e}")
         return None
