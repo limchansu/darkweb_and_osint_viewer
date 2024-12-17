@@ -14,7 +14,7 @@ async def fetch_page(session, url):
         return None
 
 
-async def play(db):
+async def play(db, show=False):
     collection = db["play"]
     url = "http://k7kg3jqxang3wh7hnmaiokchk7qoebupfgoik6rha6mjpzwupwtj25yd.onion/"
 
@@ -84,9 +84,12 @@ async def play(db):
                                     result["links"].append(f"http{link.strip()}")
 
                         result["rar_password"] = info_text[password_index + len("Rar password: "):].strip() if password_index != -1 else ""
-
+                        if show:
+                            print(f'play: {result}')
                         if not await collection.find_one({"title": result["title"]}):
-                            await collection.insert_one(result)
+                            obj = await collection.insert_one(result)
+                            if show:
+                                print('play insert success ' + str(obj.inserted_id))
 
                     except Exception as e:
                         print(f"[ERROR] rhysida_crawler.py - play(): {e}")

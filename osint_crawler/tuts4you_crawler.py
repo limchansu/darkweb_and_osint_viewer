@@ -45,8 +45,7 @@ def check_snippet_for_keywords(a_tag, keywords):
     return False
 
 # 페이지 크롤링 함수
-async def search_page(session, db, target_url, keywords):
-    collection = db["tuts4you"]
+async def search_page(session, collection, target_url, keywords, show):
     
     try:
         html_content = await tor_request(session, target_url)
@@ -70,22 +69,23 @@ async def search_page(session, db, target_url, keywords):
                 if check_page(a_tag, keywords) and check_snippet_for_keywords(a_tag, keywords):
                     title = a_tag.get("title")
                     url = a_tag.get("href")
+                    post_data = {
+                        "title": title,
+                        "url": url,
+                        "crawled_time": str(datetime.utcnow())
+                    }
+                    if show:
+                        print(f'tuts4you: {post_data}')
                     if not await collection.find_one({"title": title}):  # 중복 확인
-                        post_data = {
-                            "title": title,
-                            "url": url,
-                            "crawled_time": str(datetime.utcnow())
-                        }
-                        await collection.insert_one(post_data)
+                        obj = await collection.insert_one(post_data)
+                        if show:
+                            print('tuts4you insert success ' + str(obj.inserted_id))
     except Exception as e:
         print(f"[ERROR] tuts4you_crawler.py - search_page(): {e}")
 
-# 메인 실행 함수
-async def tuts4you():
-    # MongoDB 연결
-    client = AsyncIOMotorClient("mongodb://localhost:27017/")
-    db = client["darkweb_db"]
 
+async def tuts4you(db, show=False):
+    collection = db["tuts4you"]
     # 현재 스크립트 기준 경로에서 키워드 파일 로드
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     KEYWORDS_FILE = os.path.join(BASE_DIR, "cleaned_keywords.json")
@@ -114,8 +114,5 @@ async def tuts4you():
 
     # 비동기 세션 생성 및 크롤링 작업 수행
     async with aiohttp.ClientSession(connector=connector) as session:
-        tasks = [search_page(session, db, url, keywords) for url in target_categories]
+        tasks = [search_page(session, collection, url, keywords, show) for url in target_categories]
         await asyncio.gather(*tasks)
-
-if __name__ == "__main__":
-    asyncio.run(tuts4you())

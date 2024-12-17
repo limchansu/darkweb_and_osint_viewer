@@ -16,7 +16,7 @@ async def fetch_page(url, proxies, headers):
     return await loop.run_in_executor(None, fetch_page_sync, url, proxies, headers)
 
 
-async def htdark(db):
+async def htdark(db, show=False):
     collection = db["htdark"]
     base_url = "http://ky6urnzorg43zp5sw2gb46csndhpzn6ttpectmeooalwn2zc5w44rbqd.onion"
     proxies = {"http": "socks5h://127.0.0.1:9050"}
@@ -48,9 +48,12 @@ async def htdark(db):
                 "author": author,
                 "posted Time": post_time,
             }
-
-            if not collection.find_one({"title": title, "posted Time": post_time}):
-                collection.insert_one(post_data)
+            if show:
+                print(f'htdark: {post_data}')
+            if not await collection.find_one({"title": title, "posted Time": post_time}):
+                obj = await collection.insert_one(post_data)
+                if show:
+                    print('htdark insert success ' + str(obj.inserted_id))
 
         next_page = soup.find('a', class_='pageNav-jump pageNav-jump--next')
         url = base_url + next_page.get('href') if next_page else None

@@ -25,7 +25,6 @@ async def fetch_page(page, url):
     Playwright를 사용해 페이지를 가져오는 비동기 함수
     """
     try:
-        print(f"[INFO] Fetching URL: {url}")
         await page.goto(url, timeout=60000)
         await asyncio.sleep(3)  # 페이지 로드 대기
         return await page.content()
@@ -34,7 +33,7 @@ async def fetch_page(page, url):
         print(f"[ERROR] darkleak_crawler.py - fetch_page(): {e}")
         return None
 
-async def process_page(db, html, base_url):
+async def process_page(db, html, base_url, show):
     """
     HTML을 파싱하고 데이터를 MongoDB에 저장하는 함수
     """
@@ -60,16 +59,18 @@ async def process_page(db, html, base_url):
                 post_data = {
                     "file_name": file_name,
                     "url": full_url,
-                    "crawled_time": str(datetime.now())
                 }
 
                 # JSON Schema 검증
                 validate(instance=post_data, schema=SCHEMA)
-
+                if show:
+                    print(f'darkleak: {post_data}')
                 # 중복 확인 및 데이터 저장
                 if not await collection.find_one({"file_name": file_name, "url": full_url}):
-                    await collection.insert_one(post_data)
-                    print(f"[INFO] Saved: {file_name}")
+                    obj = await collection.insert_one(post_data)
+                    if show:
+                        print('darkleak insert success ' + str(obj.inserted_id))
+
             except ValidationError as e:
                 print(f"[ERROR] darkleak_crawler.py - process_page(): {e.message}")
             except Exception as e:
@@ -78,7 +79,7 @@ async def process_page(db, html, base_url):
     except Exception as e:
         print(f"[ERROR] darkleak_crawler.py - process_page(): {e}")
 
-async def darkleak(db):
+async def darkleak(db, show=False):
     """
     DarkLeak 크롤러 실행 (비동기)
     """
@@ -94,17 +95,8 @@ async def darkleak(db):
             html = await fetch_page(page, category_url)
             if html:
                 # 페이지 처리 및 데이터 저장
-                await process_page(db, html, base_url)
+                await process_page(db, html, base_url, show)
 
             await browser.close()
     except Exception as e:
         print(f"[ERROR] darkleak_crawler.py - darkleak(): {e}")
-
-if __name__ == "__main__":
-    # 비동기 MongoDB 연결
-    MONGO_URI = "mongodb://localhost:27017"
-    mongo_client = AsyncIOMotorClient(MONGO_URI)
-    db = mongo_client["your_database_name"]
-
-    # 비동기 실행
-    asyncio.run(darkleak(db))

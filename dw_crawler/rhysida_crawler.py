@@ -20,7 +20,7 @@ async def fetch_page(session, url):
         return None
 
 
-async def rhysida(db):
+async def rhysida(db, show=False):
     collection = db["rhysida"]
     url = 'http://rhysidafohrhyy2aszi7bm32tnjat5xri65fopcxkdfxhi4tidsg7cad.onion/archive.php'
     proxy = "socks5://127.0.0.1:9050"
@@ -46,9 +46,12 @@ async def rhysida(db):
                     "content": content,
                     "links": links,
                 }
-
+                if show:
+                    print(f'rhysida: {post_data}')
                 if not await collection.find_one({"title": title}):
-                    await collection.insert_one(post_data)
+                    obj = await collection.insert_one(post_data)
+                    if show:
+                        print('rhysida insert success ' + str(obj.inserted_id))
 
             except Exception as e:
                 print(f"[ERROR] rhysida_crawler.py - rhysida(): {e}")

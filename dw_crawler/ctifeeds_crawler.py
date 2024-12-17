@@ -8,10 +8,8 @@ from datetime import datetime
 json_sources = [
     {"url": "https://ctifeeds.andreafortuna.org/dataleaks.json", "categories": "dataleaks"},
     {"url": "https://ctifeeds.andreafortuna.org/cybercrime_on_telegram.json", "categories": "cybercrime_on_telegram"},
-    {"url": "https://ctifeeds.andreafortuna.org/phishing_sites.json", "categories": "phishing_sites"},
     {"url": "https://ctifeeds.andreafortuna.org/datamarkets.json", "categories": "datamarkets"},
     {"url": "https://ctifeeds.andreafortuna.org/ransomware_victims.json", "categories": "ransomware_victims"},
-    {"url": "https://ctifeeds.andreafortuna.org/recent_defacements.json", "categories": "recent_defacements"},
 ]
 
 # JSON Schema 정의
@@ -19,13 +17,13 @@ schema = {
     "type": "object",
     "properties": {
         "categories": {"type": "string"},
-        "name": {"type": "string"},
+        "title": {"type": "string"},
         "url": {"type": "string"},
         "source": {"type": "string"},
         "screenshot": {"type": ["string", "null"]},
         "urlscan": {"type": ["string", "null"]},
     },
-    "required": ["categories", "name", "url", "source"],
+    "required": ["categories", "title", "url", "source"],
 }
 
 async def fetch_json(session, source):
@@ -33,7 +31,7 @@ async def fetch_json(session, source):
     비동기적으로 JSON 데이터를 가져오는 함수
     """
     try:
-        async with session.get(source["url"], timeout=10) as response:
+        async with session.get(source["url"], timeout=30) as response:
             response.raise_for_status()
             data = await response.json()
             return source["categories"], data
@@ -41,26 +39,42 @@ async def fetch_json(session, source):
         print(f"[ERROR] ctifeeds_crawler.py - fetch_json(): {e}")
         return source["categories"], None
 
-async def process_data(db, source, data):
+async def process_data(db, source, data, show):
     """
     MongoDB에 데이터를 저장하는 함수
     """
     collection = db["ctifeeds"]
     for item in data:
         item["categories"] = source
-        item["Crawled Time"] = str(datetime.now())  # 크롤링 시간 추가
+
+        # 'name'을 'title'로 변경 (name 키가 없을 경우, None 대신 건너뛰기)
+        name_value = item.pop("name", None)
+        if not name_value:  # name이 없으면 다음 항목으로 넘어감
+            print("[WARNING] Skipping item with missing 'name' field.")
+            continue
+        item["title"] = name_value
 
         # JSON Schema 검증 및 저장
         try:
             validate(instance=item, schema=schema)
-            if not collection.find_one({"categories": item["categories"], "name": item["name"]}):
-                collection.insert_one(item)
+            if show:
+                print(f'ctifeeds: {item}')
+
+            # 중복 확인
+            existing_doc = await collection.find_one(
+                {"categories": item["categories"], "title": item["title"]}
+            )
+            if not existing_doc:  # 문서가 존재하지 않으면 저장
+                result = await collection.insert_one(item)
+                if show and result.inserted_id:
+                    print('ctifeeds insert success ' + str(result.inserted_id))
+
         except ValidationError as e:
             print(f"[ERROR] ctifeeds_crawler.py - process_data(): {e.message}")
         except Exception as e:
             print(f"[ERROR] ctifeeds_crawler.py - process_data(): {e}")
 
-async def ctifeeds(db):
+async def ctifeeds(db, show=False):
     """
     ctifeeds 크롤러 실행 및 MongoDB 컬렉션에 비동기적으로 데이터 저장
     """
@@ -70,7 +84,7 @@ async def ctifeeds(db):
 
         for source, data in results:
             if data:
-                await process_data(db, source, data)
+                await process_data(db, source, data, show)
 
 if __name__ == "__main__":
     # MongoDB 연결 설정

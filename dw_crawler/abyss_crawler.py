@@ -6,7 +6,7 @@ from datetime import datetime
 from jsonschema import validate, ValidationError
 from pymongo import MongoClient
 
-async def crawl_page(base_url, proxy_address, schema, collection):
+async def crawl_page(base_url, proxy_address, schema, collection, show):
     """
     개별 페이지를 크롤링하는 비동기 함수 (Playwright 사용)
     """
@@ -42,13 +42,14 @@ async def crawl_page(base_url, proxy_address, schema, collection):
                 # JSON Schema 검증
                 try:
                     validate(instance=post_data, schema=schema)
-
+                    if show:
+                        print(f'abyss: {post_data}')
                     # 중복 확인 및 데이터 저장
-                    if not collection.find_one({"title": title, "description": description}):
-                        collection.insert_one(post_data)
-                        print(f"[INFO] Saved: {title}")
-                    else:
-                        print(f"[INFO] Skipped (duplicate): {title}")
+                    if not await collection.find_one({"title": title, "description": description}):
+                        obj = await collection.insert_one(post_data)
+                        if show:
+                            print('abyss insert success ' + str(obj.inserted_id))
+
                 except ValidationError as ve:
                     print(f"[ERROR] abyss_crawler.py - crawl_page(): {ve.message}")
 
@@ -58,7 +59,7 @@ async def crawl_page(base_url, proxy_address, schema, collection):
     except Exception as e:
         print(f"[ERROR] abyss_crawler.py - crawl_page(): {e}")
 
-async def abyss(db):
+async def abyss(db, show=False):
     """
     Abyss 크롤러 실행 및 MongoDB 컬렉션에 데이터 저장 (비동기 실행)
     """
@@ -85,14 +86,7 @@ async def abyss(db):
 
     # 비동기 실행
     tasks = [
-        crawl_page(url, proxy_address, schema, collection) for url in base_urls
+        crawl_page(url, proxy_address, schema, collection, show) for url in base_urls
     ]
     await asyncio.gather(*tasks)
 
-if __name__ == "__main__":
-    # MongoDB 연결 설정
-    mongo_client = MongoClient("mongodb://localhost:27017/")
-    db = mongo_client["your_database_name"]
-
-    # 비동기 실행
-    asyncio.run(abyss(db))

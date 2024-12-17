@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
 from jsonschema import validate
 
-async def island(db):
+async def island(db, show=False):
     collection = db["island"]
     base_url = "https://crackingisland.net"
     category_url = f"{base_url}/categories/combolists"
@@ -56,18 +56,20 @@ async def island(db):
                         }
 
                         validate(instance=post_data, schema=schema)
-
+                        if show:
+                            print(f'island: {post_data}')
                         if not await collection.find_one({"title": title, "url": post_url}):
-                            await collection.insert_one(post_data)
+                            obj = await collection.insert_one(post_data)
+                            if show:
+                                print('island insert success ' + str(obj.inserted_id))
 
                     except Exception as e:
                         print(f"[ERROR] island_crawler.py - island(): {e}")
 
                 next_button = await page.query_selector('li.pagination_linkText__cuIa8 >> text="Next"')
-                print(next_button)
                 if next_button:
                     try:
-                        await next_button.click(timeout=10000)
+                        await next_button.click(timeout=3000)
                     except playwright.async_api.TimeoutError as e:
                         return
                     await asyncio.sleep(3)
