@@ -8,10 +8,8 @@ from datetime import datetime
 json_sources = [
     {"url": "https://ctifeeds.andreafortuna.org/dataleaks.json", "categories": "dataleaks"},
     {"url": "https://ctifeeds.andreafortuna.org/cybercrime_on_telegram.json", "categories": "cybercrime_on_telegram"},
-    {"url": "https://ctifeeds.andreafortuna.org/phishing_sites.json", "categories": "phishing_sites"},
     {"url": "https://ctifeeds.andreafortuna.org/datamarkets.json", "categories": "datamarkets"},
     {"url": "https://ctifeeds.andreafortuna.org/ransomware_victims.json", "categories": "ransomware_victims"},
-    {"url": "https://ctifeeds.andreafortuna.org/recent_defacements.json", "categories": "recent_defacements"},
 ]
 
 # JSON Schema 정의
@@ -49,15 +47,28 @@ async def process_data(db, source, data, show):
     for item in data:
         item["categories"] = source
 
+        # 'name'을 'title'로 변경 (name 키가 없을 경우, None 대신 건너뛰기)
+        name_value = item.pop("name", None)
+        if not name_value:  # name이 없으면 다음 항목으로 넘어감
+            print("[WARNING] Skipping item with missing 'name' field.")
+            continue
+        item["title"] = name_value
+
         # JSON Schema 검증 및 저장
         try:
             validate(instance=item, schema=schema)
             if show:
                 print(f'ctifeeds: {item}')
-            if not await collection.find_one({"categories": item["categories"], "title": item["title"]}):
-                obj = await collection.insert_one(item)
-                if show:
-                    print('ctifeeds insert success ' + str(obj.inserted_id))
+
+            # 중복 확인
+            existing_doc = await collection.find_one(
+                {"categories": item["categories"], "title": item["title"]}
+            )
+            if not existing_doc:  # 문서가 존재하지 않으면 저장
+                result = await collection.insert_one(item)
+                if show and result.inserted_id:
+                    print('ctifeeds insert success ' + str(result.inserted_id))
+
         except ValidationError as e:
             print(f"[ERROR] ctifeeds_crawler.py - process_data(): {e.message}")
         except Exception as e:
