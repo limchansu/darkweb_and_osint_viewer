@@ -1,11 +1,7 @@
 import requests
 import json
 from datetime import datetime, timedelta
-import sys, os
 
-# 실행 시 경로 포함
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-from connect_db import osint_db
 
 # 해당 크롤러는 환경 변수에서 API 정보를 가져옵니다.
 # 환경 변수 설정 방법:
@@ -17,6 +13,7 @@ GITHUB_API_URL = 'https://api.github.com/search/repositories'   # GitHub Reposit
 JSON_FILE_PATH = './cleaned_keywords.json'
 MIN_KEYWORDS_MATCH = 20  # 최소 10개 키워드 포함
 DAYS_AGO = 730  # 마지막 수정 기준 날짜
+
 
 # 리포지토리를 날짜 기준으로 필터링하는 함수(최소 2년 정도로)
 def filter_by_last_update(repositories, days_ago):
@@ -65,7 +62,7 @@ def search_github(keyword):
         return []
 
 
-def main():
+def run(db):
     with open(JSON_FILE_PATH, 'r') as file:
         data = json.load(file)
 
@@ -73,7 +70,7 @@ def main():
     print("Searching GitHub for repositories matching keywords...")
 
     # DB 접근 객체
-    collection = osint_db["github"]
+    collection = db["github"]
 
     for keyword in keywords:
         print(f"\nKeyword: {keyword}")
@@ -94,15 +91,17 @@ def main():
                         'url': repo['html_url'],
                         'description': ((repo['description'])[:100] + '...') if repo['description'] and len(repo['description']) > 100 else (repo['description'] or 'No description available.')
                     }
-                    print(f"\nRepository: {repo['full_name']}")
-                    print(f"URL: {repo['html_url']}")
-                    print(f"Description: {repo['description']}\n")
 
-                    result = collection.insert_one(repo_info)
-                    print("Inserted ID : ", result.inserted_id, "\n")
+                    # 중복 확인
+                    if not collection.find_one({"repo_name": repo_info['repo_name']}):
+                        print(f"\nRepository: {repo['full_name']}")
+                        print(f"URL: {repo['html_url']}")
+                        print(f"Description: {repo['description']}\n")
+
+                        result = collection.insert_one(repo_info)
+                        print("Inserted ID : ", result.inserted_id, "\n")
+                    else:
+                        print(f"Duplicate found. Skipping: {repo['full_name']}")
             else:
                 print(f"Could not fetch README for {repo['full_name']}.")
 
-
-if __name__ == '__main__':
-    main()

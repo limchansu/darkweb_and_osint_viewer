@@ -1,10 +1,6 @@
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS  # 추가된 부분
-import sys, os
-
-# 실행 시 경로 포함
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-from connect_db import connect_databases
+from main import setup_database
 
 app = Flask(__name__)
 CORS(app)  # 모든 도메인에 대해 CORS를 허용
@@ -23,7 +19,15 @@ def search():
     option = data.get('option', '')
 
     # 데이터베이스 연결
-    dw_db, osint_db = connect_databases()
+    dw_collections = ["abyss", "blackbasta", "blacksuit", "breachdetector", "ctifeeds",
+                        "daixin", "darkleak", "darknetARMY", "everest", "island",
+                        "leakbase", "lockbit", "play", "rhysida", "htdark"]
+    dw_db = setup_database("darkweb", dw_collections)
+
+    osint_collections = ["github", "tuts4you", "0x00org"]
+    osint_db = setup_database("osint", osint_collections)
+
+    print(dw_db, osint_db)
 
     # 초기화
     db_collection = None
