@@ -1,23 +1,27 @@
 import asyncio
 import aiohttp
-import json
-import re
-import time
+from aiohttp_socks import ProxyConnector
 from bs4 import BeautifulSoup
+import json
+import os
+import re
 from datetime import datetime
-from stem import Signal
-from stem.control import Controller
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
 
-# Tor 네트워크를 재시작하여 새로운 IP 할당
-def renew_connection(password):
-    try:
-        with Controller.from_port(port=9051) as controller:
-            controller.authenticate(password=password)
-            controller.signal(Signal.NEWNYM)
-            print("New Tor connection requested.")
-    except Exception as e:
-        print(f"Failed to renew Tor connection: {e}")
+# Tor 프록시 설정
+PROXY_URL = "socks5://127.0.0.1:9050"
+
+# 비동기 Tor 요청 함수
+async def tor_request(session, url, retries=3):
+    for attempt in range(retries):
+        try:
+            await asyncio.sleep(2)  # 요청 간 딜레이 추가
+            async with session.get(url, timeout=30) as response:
+                if response.status == 200:
+                    return await response.text()
+        except Exception as e:
+            print(f"[ERROR] x00org_crawler.py - tor_request(){e}")
+    return None
 
 # 키워드 로드 함수
 def load_keywords(file_path):
@@ -26,23 +30,8 @@ def load_keywords(file_path):
             data = json.load(file)
             return data.get("keywords", [])
     except (FileNotFoundError, json.JSONDecodeError) as e:
-        print(f"Error loading keywords from {file_path}: {e}")
+        print(f"[ERROR] x00org_crawler.py - load_keywords(): {e}")
         return []
-
-# Tor 프록시를 통한 비동기 요청 함수
-async def tor_request(session, url, retries=3):
-    proxy = "socks5h://127.0.0.1:9050"
-    for attempt in range(retries):
-        try:
-            await asyncio.sleep(3)  # 요청 간 딜레이 추가
-            async with session.get(url, proxy=proxy, timeout=30) as response:
-                if response.status == 200:
-                    return await response.text()
-                else:
-                    print(f"Failed to fetch {url}, status: {response.status}")
-        except Exception as e:
-            print(f"Request failed (attempt {attempt + 1}/{retries}): {e}")
-    return None
 
 # 게시글 제목 및 URL 가져오기
 async def fetch_post_titles(session, base_url):
@@ -81,15 +70,22 @@ async def verify_keywords_in_content(session, url, keywords):
 
     soup = BeautifulSoup(html_content, 'html.parser')
     content = soup.get_text(strip=True)
-    for keyword in keywords:
-        if content.lower().count(keyword.lower()) >= 3:
-            return True
-    return False
+    return any(content.lower().count(keyword.lower()) >= 3 for keyword in keywords)
 
 # 크롤링 실행 함수
-async def run(db):
-    collection = db["0x00org"]  # MongoDB 컬렉션 선택
-    keywords_file = "./cleaned_keywords.json"
+async def x00org():
+    # MongoDB 연결
+    client = AsyncIOMotorClient("mongodb://localhost:27017/")
+    db = client["darkweb_db"]
+    collection = db["0x00org"]
+
+    # 키워드 파일 로드
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    KEYWORDS_FILE = os.path.join(BASE_DIR, "cleaned_keywords.json")
+    keywords = load_keywords(KEYWORDS_FILE)
+    if not keywords:
+        return
+
     base_urls = [
         "https://0x00sec.org/c/bug-bounty/108",
         "https://0x00sec.org/c/pentesting/101",
@@ -118,49 +114,26 @@ async def run(db):
         "https://0x00sec.org/c/forensics/106"
     ]
 
-    keywords = load_keywords(keywords_file)
-    if not keywords:
-        print("No keywords found. Exiting.")
-        return
+    # Tor 프록시 커넥터 생성
+    connector = ProxyConnector.from_url(PROXY_URL)
 
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(connector=connector) as session:
         for base_url in base_urls:
-            print(f"Fetching post titles from {base_url}...")
             posts = await fetch_post_titles(session, base_url)
             if not posts:
-                print(f"No posts found for {base_url}. Skipping.")
                 continue
 
-            print("Matching keywords in titles...")
             matched_posts = match_keywords_in_titles(posts, keywords)
-
-            print("Verifying keyword matches in content and saving to MongoDB...")
-            tasks = []
             for post in matched_posts:
-                tasks.append(asyncio.create_task(
-                    verify_and_save(session, collection, post, keywords)
-                ))
-
-            await asyncio.gather(*tasks)
-
-# 본문 검증 및 저장 함수
-async def verify_and_save(session, collection, post, keywords):
-    if await verify_keywords_in_content(session, post["url"], keywords):
-        if not collection.find_one({"title": post["title"]}):
-            post_data = {
-                "title": post["title"],
-                "url": post["url"],
-                "keywords": post["keywords"],
-                "crawled_time": str(datetime.now())
-            }
-            collection.insert_one(post_data)
-            print(f"Saved: {post['title']}")
-        else:
-            print(f"Skipped (duplicate): {post['title']}")
+                if await verify_keywords_in_content(session, post["url"], post["keywords"].split(", ")):
+                    if not await collection.find_one({"title": post["title"]}):
+                        post_data = {
+                            "title": post["title"],
+                            "url": post["url"],
+                            "keywords": post["keywords"],
+                            "crawled_time": str(datetime.now())
+                        }
+                        await collection.insert_one(post_data)
 
 if __name__ == "__main__":
-    mongo_client = MongoClient("mongodb://localhost:27017/")
-    db = mongo_client["your_database_name"]
-
-    renew_connection(password="your_password")  # Tor 재연결
-    asyncio.run(run(db))
+    asyncio.run(x00org())
