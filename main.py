@@ -44,15 +44,15 @@ async def exec_crawler():
         daixin(darkweb_db, True),
         darkleak(darkweb_db, True),
         darknetARMY(darkweb_db, True),
-        # htdark(darkweb_db, True),
-        # island(darkweb_db, True),
-        # leakbase(darkweb_db, True),
-        # lockbit(darkweb_db, True),
-        # play(darkweb_db, True),
-        # rhysida(darkweb_db, True),
-        # github(osint_db, True),
-        # tuts4you(osint_db, True),
-        # x00org(osint_db, True)
+        htdark(darkweb_db, True),
+        island(darkweb_db, True),
+        leakbase(darkweb_db, True),
+        lockbit(darkweb_db, True),
+        play(darkweb_db, True),
+        rhysida(darkweb_db, True),
+        github(osint_db, True),
+        tuts4you(osint_db, True),
+        x00org(osint_db, True)
     )
 
 asyncio.run(exec_crawler())
