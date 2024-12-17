@@ -1,74 +1,92 @@
+import asyncio
+import aiohttp
+from aiohttp_socks import ProxyConnector
 from bs4 import BeautifulSoup
-import cloudscraper
 from datetime import datetime
+from pymongo import MongoClient
 
-def scrape_darknetarmy_posts(db, pages=3):
+async def fetch_page(session, url):
     """
-    darknetARMY 크롤러 실행 및 MongoDB 컬렉션에 데이터 저장
+    페이지 요청을 비동기적으로 처리
     """
-    # MongoDB 컬렉션 선택
+    try:
+        async with session.get(url, timeout=15) as response:
+            response.raise_for_status()
+            print(f"[INFO] Fetched: {url}")
+            return await response.text()
+    except Exception as e:
+        print(f"[ERROR] Failed to fetch {url}: {e}")
+        return None
+
+async def process_page(db, session, base_url, page):
+    """
+    각 페이지를 비동기적으로 처리하고 MongoDB에 저장
+    """
     collection = db["darknetARMY"]
+    url = f"{base_url}page-{page}"
+    print(f"[INFO] Processing page {page}: {url}")
 
-    # 크롤러 전용 설정
-    base_url = "http://dna777qhcrxy5sbvk7rkdd2phhxbftpdtxvwibih26nr275cdazx4uyd.onion/whats-new/posts/797681/"
-    proxies = {
-        "http": "socks5h://127.0.0.1:9050",
-        "https": "socks5h://127.0.0.1:9050"
-    }
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-    }
+    html_content = await fetch_page(session, url)
+    if not html_content:
+        print(f"[WARNING] Skipping page {page} due to fetch failure.")
+        return
 
-    # Cloudflare 우회 세션 생성
-    scraper = cloudscraper.create_scraper()
+    # BeautifulSoup으로 HTML 파싱
+    soup = BeautifulSoup(html_content, 'html.parser')
+    threads = soup.find_all('div', class_='structItem')
 
-    # 페이지 크롤링
-    for page in range(1, pages + 1):
-        url = f"{base_url}page-{page}"
-        print(f"Fetching data for page {page}: {url}")
+    for thread in threads:
+        title_tag = thread.find('div', class_='structItem-title')
+        title = title_tag.get_text(strip=True) if title_tag else None
 
-        # HTML 가져오기
-        response = scraper.get(url, proxies=proxies, headers=headers)
-        if response.status_code == 200:
-            html_content = response.text
+        author_tag = thread.find('a', class_='username')
+        author = author_tag.get_text(strip=True) if author_tag else None
+
+        time_tag = thread.find('time')
+        post_time = time_tag["title"] if time_tag and "title" in time_tag.attrs else None
+
+        post_data = {
+            "title": title,
+            "author": author,
+            "posted Time": post_time,
+            "crawled Time": str(datetime.now())
+        }
+
+        # 중복 확인 및 저장
+        if title and not collection.find_one({"title": title, "posted Time": post_time}):
+            collection.insert_one(post_data)
+            print(f"Saved: {post_data}")
         else:
-            print(f"Failed to fetch page {page}: {response.status_code}")
-            continue
+            print(f"Skipped (duplicate): {post_data['title'] if title else 'No Title'}")
 
-        # BeautifulSoup으로 HTML 파싱
-        soup = BeautifulSoup(html_content, 'html.parser')
+async def darknetARMY(db):
+    """
+    DarknetARMY 크롤러 비동기 실행 및 MongoDB 저장
+    """
+    base_url = "http://dna777qhcrxy5sbvk7rkdd2phhxbftpdtxvwibih26nr275cdazx4uyd.onion/whats-new/posts/797681/"
+    proxy_url = "socks5://127.0.0.1:9050"
 
-        # 게시글 목록 추출
-        threads = soup.find_all('div', class_='structItem')
+    connector = ProxyConnector.from_url(proxy_url)
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
 
-        # 게시글 데이터 추출 및 MongoDB 저장
-        for thread in threads:
-            # 게시글 제목
-            title_tag = thread.find('div', class_='structItem-title')
-            title = title_tag.get_text(strip=True) if title_tag else None
+    async with aiohttp.ClientSession(connector=connector, headers=headers) as session:
+        tasks = [process_page(db, session, base_url, page) for page in range(1, 4)]
+        await asyncio.gather(*tasks)
 
-            # 작성자 이름
-            author_tag = thread.find('a', class_='username')
-            author = author_tag.get_text(strip=True) if author_tag else None
+if __name__ == "__main__":
+    # MongoDB 연결 설정
+    MONGO_URI = "mongodb://localhost:27017/"
+    DB_NAME = "darkweb_db"
 
-            # 작성 시간
-            time_tag = thread.find('time')
-            post_time = time_tag["title"] if time_tag and "title" in time_tag.attrs else None
+    try:
+        client = MongoClient(MONGO_URI)
+        db = client[DB_NAME]
+        print("[INFO] MongoDB 연결 성공")
 
-            # 데이터 생성
-            post_data = {
-                "title": title,
-                "author": author,
-                "posted Time": post_time,
-                "crawled Time": str(datetime.now())
-            }
+        # 비동기 실행
+        asyncio.run(darknetARMY(db))
 
-            # 중복 데이터 확인 및 저장
-            if not collection.find_one({"title": title, "posted Time": post_time}):
-                collection.insert_one(post_data)
-                print(f"Saved: {post_data}")
-            else:
-                print(f"Skipped (duplicate): {post_data['title']}")
-
-        print(f"Page {page} data collection complete.")
-        print("-" * 40)
+    except Exception as e:
+        print(f"[ERROR] MongoDB 연결 실패: {e}")
