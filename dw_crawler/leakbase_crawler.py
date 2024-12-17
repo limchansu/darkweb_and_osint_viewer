@@ -2,6 +2,19 @@ import asyncio
 from datetime import datetime
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
+from motor.motor_asyncio import AsyncIOMotorClient
+
+
+async def setup_database(db_name, collection_names):
+    client = AsyncIOMotorClient("mongodb://mongo1:30001,mongo2:30002,mongo:30003/?replicaSet=my-rs")
+    db = client[db_name]
+    existing_collections = await db.list_collection_names()
+    for collection in collection_names:
+        if collection not in existing_collections:
+            await db.create_collection(collection)
+            print(f"[INFO] {collection} 컬렉션 생성 완료! ({db_name})")
+    print(f"[INFO] MongoDB 설정 완료: {db_name}")
+    return db
 
 
 async def leakbase(db):
@@ -46,3 +59,6 @@ async def leakbase(db):
             print(f"오류 발생: {e}")
         finally:
             await browser.close()
+
+
+

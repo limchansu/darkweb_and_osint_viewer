@@ -30,7 +30,6 @@ async def lockbit(db):
                         "post_url": url + item["href"],
                         "update_date": item.find("div", class_="updated-post-date")
                                         .text.strip().replace("\xa0", "").replace("Updated: ", ""),
-                        "crawled_time": str(datetime.now())
                     }
 
                     if not await collection.find_one({"title": result["title"]}):
