@@ -1,17 +1,17 @@
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from requests_tor import RequestsTor
 from bs4 import BeautifulSoup
 from datetime import datetime
+from pymongo import MongoClient
 
 # RequestsTor 인스턴스 초기화
 rt = RequestsTor(tor_ports=(9050,), tor_cport=9051)
 
-def run(db):
+def crawl_blacksuit_page(url, collection):
     """
-    BlackSuit 크롤러 실행 및 MongoDB 컬렉션에 데이터 저장
+    BlackSuit 개별 페이지를 크롤링하는 동기 함수
     """
-    collection = db["blacksuit"]  # MongoDB 컬렉션 선택
-    url = 'http://weg7sdx54bevnvulapqu6bpzwztryeflq3s23tegbmnhkbpqz637f2yd.onion/'
-
     try:
         # 메인 페이지 요청 및 파싱
         r = rt.get(url)
@@ -39,7 +39,7 @@ def run(db):
                 try:
                     company = item.find('div', class_='url').find('a')
                     result['company'] = company['href'] if company else ''
-                except:
+                except Exception:
                     result['company'] = ''
 
                 # 내용
@@ -65,4 +65,30 @@ def run(db):
                     print(f"Skipped (duplicate): {result['title']}")
 
     except Exception as e:
-        print(f"blacksuit crawler error : {e}")
+        print(f"[ERROR] BlackSuit 크롤링 중 오류 발생: {e}")
+
+
+async def blackbasta(db):
+    """
+    BlackSuit 크롤러 실행 및 MongoDB 컬렉션에 비동기적 저장
+    """
+    collection = db["blacksuit"]
+    base_url = 'http://weg7sdx54bevnvulapqu6bpzwztryeflq3s23tegbmnhkbpqz637f2yd.onion/'
+
+    print("[INFO] BlackSuit 크롤러 실행 시작...")
+
+    # ThreadPoolExecutor를 사용해 비동기적으로 동기 함수 실행
+    with ThreadPoolExecutor() as executor:
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(executor, crawl_blacksuit_page, base_url, collection)
+
+    print("[INFO] BlackSuit 크롤러 실행 완료")
+
+
+if __name__ == "__main__":
+    # MongoDB 연결 설정
+    mongo_client = MongoClient("mongodb://localhost:27017/")
+    db = mongo_client["your_database_name"]
+
+    # 비동기 실행
+    asyncio.run(blackbasta(db))
