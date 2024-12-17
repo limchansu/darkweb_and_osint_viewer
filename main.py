@@ -38,7 +38,7 @@ async def exec_crawler():
         lockbit(db),
         play(db),
         rhysida(db),
-        # github(db)
+        github(db)
     )
     print("[INFO] 모든 크롤러 실행 완료!")
 
