@@ -1,4 +1,5 @@
 import asyncio
+import playwright
 from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
 from jsonschema import validate, ValidationError
@@ -79,8 +80,10 @@ async def blackbasta(db):
                         print(f"[ERROR] blackbasta_crawler - blackbasta: {e}")
                 next_button = page.locator('div.next-page-btn')
                 if next_button:
-                    await next_button.click()
-                    await asyncio.sleep(3)
+                    try:
+                        await next_button.click(timeout=10000)
+                    except playwright.async_api.TimeoutError as e:
+                        return
                 else:
                     break
         except Exception as e:
