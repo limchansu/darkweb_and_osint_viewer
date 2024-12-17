@@ -76,9 +76,8 @@ def initialize_and_run_crawling():
     run_crawling()
 
 if __name__ == '__main__':
-    # 크롤링 작업을 별도의 스레드에서 실행
-    crawling_thread = threading.Thread(target=initialize_and_run_crawling, daemon=True)
-    crawling_thread.start()
+    # Flask 애플리케이션 실행을 별도의 쓰레드에서 실행
+    run_thread = threading.Thread(target=app.run(debug=True), daemon=True)
+    run_thread.start()
 
-    # Flask 애플리케이션 실행
-    app.run(debug=True)
+    initialize_and_run_crawling()
