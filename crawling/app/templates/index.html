@@ -6,149 +6,244 @@
   <title>Search with Options</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
   <style>
-    .btn.active {
-      box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); /* 버튼에 그림자 추가 */
-      border-color: #0056b3; /* 활성화된 버튼의 테두리 색상 */
+    .options-container { margin-bottom: 20px; }
+    .option-btn { background-color: #333; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 5px; transition: all 0.3s ease-in-out; }
+    .option-btn.active { background-color: #5cb85c; }
+    .option-btn:hover { background-color: #4cae4c; }
+    #osintBtn, #darkwebBtn { margin-right: 10px; }
+    .pagination .active .page-link {
+      background-color: #5cb85c;
+      border-color: #5cb85c;
     }
-    /* 토글 버튼 스타일 */
-    #toggleBtn {
-      background-color: #6c757d; /* 기본 배경색 */
-      color: white; /* 글자 색상 */
-      border: none; /* 테두리 제거 */
-      border-radius: 5px; /* 모서리 둥글게 */
-      padding: 10px 20px; /* 버튼 내부 여백 */
-      font-size: 14px; /* 글자 크기 */
-      transition: background-color 0.3s, transform 0.2s; /* 배경색 및 애니메이션 효과 */
-      position: relative; /* 위치 조정 가능 */
-      z-index: 1000; /* 다른 요소보다 위에 표시 */
+    /* 카드 컨테이너 설정 */
+    .card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100%; /* 카드 높이를 일정하게 설정 */
+      min-height: 250px; /* 최소 높이를 설정 */
+      border-radius: 10px;
+      background-color: #f8f9fa;
+      overflow: hidden;
     }
-  
-    /* 버튼 호버 시 */
-    #toggleBtn:hover {
-      background-color: #5a6268; /* 어두운 배경색으로 변경 */
-      cursor: pointer; /* 마우스 포인터 변경 */
-      transform: scale(1.05); /* 살짝 확대 효과 */
+
+    /* 카드의 이미지가 일정한 크기를 유지하도록 설정 */
+    .card-img-top {
+      width: 100%;
+      height: 150px; /* 이미지 고정 높이 */
+      object-fit: cover; /* 이미지를 비율에 맞게 잘라서 표시 */
     }
-  
-    /* 버튼 클릭 시 */
-    #toggleBtn:active {
-      background-color: #545b62; /* 더 어두운 배경색 */
-      transform: scale(0.95); /* 살짝 축소 효과 */
+
+    /* 카드의 텍스트 부분 */
+    .card-body {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex-grow: 1; /* 남은 공간을 채우도록 설정 */
+      padding: 15px;
     }
-  
-    /* 화면 고정 버튼 위치 (필요한 경우) */
-    #toggleBtn.fixed {
-      position: fixed; /* 화면에 고정 */
-      top: 20px; /* 위쪽 여백 */
-      right: 20px; /* 오른쪽 여백 */
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: bold;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden; /* 제목이 길면 생략 표시 */
+    }
+
+    .card-text {
+      font-size: 0.9rem;
+      color: #6c757d;
+      flex-grow: 1; /* 내용이 많으면 남은 공간을 채우도록 설정 */
+      overflow: hidden; /* 텍스트가 카드 안에서 넘치지 않게 숨김 */
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+    }
+
+    .btn {
+      margin-top: auto; /* 버튼을 카드 하단에 위치하도록 설정 */
+    }
+
+    /* 카드 컨테이너에서 카드들을 일정하게 배치 */
+    .row {
+      margin-left: 0;
+      margin-right: 0;
+    }
+
+    /* 카드 크기를 일정하게 유지하기 위한 추가 설정 */
+    .col-md-3 {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 15px; /* 카드 간격 */
     }
   </style>
-  
   <script>
-    let currentPage = 1; // 현재 페이지 번호
-    const itemsPerPage = 10; // 페이지당 항목 수
+    // 옵션 데이터
+    const options = {
+      osint: ["0x00org", "github", "tuts4you"],
+      darkweb: [
+        "abyss", "blackbasta", "blacksuit", "breachdetector", "ctifeeds",
+        "daixin", "darkleak", "darknetARMY", "everest", "island",
+        "leakbase", "lockbit", "play", "rhysida"
+      ]
+    };
 
-    let currentSearchType = 'osint'; // 초기 선택된 검색 유형
+    // 현재 선택된 옵션 관리 (한 번에 하나만 선택 가능)
+    let selectedOption = null;
+    let currentPage = 1;
+    let searchResults = [];
 
-    // 각 옵션에 대한 항목을 보여주는 함수
-    function toggleOptions(type) {
-      currentSearchType = type;  // 검색 유형 설정
-      const osintOptions = document.getElementById('osintOptions');
-      const darkwebOptions = document.getElementById('darkwebOptions');
-      const osintBtn = document.getElementById('osintBtn');
-      const darkwebBtn = document.getElementById('darkwebBtn');
+    // 옵션 버튼 생성 및 컨테이너 초기화 함수
+    function toggleOptions(category) {
+      const container = document.getElementById(`${category}Options`);
+      const otherCategory = category === 'osint' ? 'darkweb' : 'osint';
+      const otherContainer = document.getElementById(`${otherCategory}Options`);
 
-      // 버튼 활성화 상태 변경
-      osintBtn.classList.remove('active');
-      darkwebBtn.classList.remove('active');
+      // 다른 카테고리의 옵션을 숨김
+      otherContainer.innerHTML = '';
 
-      if (type === 'osint') {
-        osintBtn.classList.add('active');
-        osintOptions.style.display = 'block';
-        darkwebOptions.style.display = 'none';
+      // 현재 카테고리의 옵션 토글
+      if (container.innerHTML) {
+        container.innerHTML = '';
       } else {
-        darkwebBtn.classList.add('active');
-        osintOptions.style.display = 'none';
-        darkwebOptions.style.display = 'block';
+        container.innerHTML = '';
+
+        options[category].forEach(option => {
+          const button = document.createElement('button');
+          button.className = 'btn btn-secondary m-1 option-btn';
+          button.textContent = option;
+
+          // 버튼 클릭 이벤트
+          button.onclick = () => {
+            // 모든 버튼에서 active 클래스 제거
+            document.querySelectorAll('.option-btn').forEach(btn => {
+              btn.classList.remove('active');
+            });
+
+            // 선택 상태 업데이트
+            selectedOption = { category, option };
+            button.classList.add('active');
+
+            // 상태 출력 (디버깅용)
+            console.log('Selected Option:', selectedOption);
+          };
+
+          container.appendChild(button);
+        });
       }
     }
 
-    // 옵션이 선택되었는지 확인하는 함수 (하나만 체크 가능, 반드시 체크되어야 함)
-    function validateOptions() {
-      const options = document.querySelectorAll(`input[name="option"][data-type="${currentSearchType}"]`);
-      const checkedOptions = Array.from(options).filter(option => option.checked);
-      if (checkedOptions.length === 0) {
-        alert('Please select an option.');
-        return false;
-      }
-      return true;
-    }
-
-    // 서버에서 데이터 가져오기
-    async function fetchData(page = 1) {
-      if (!validateOptions()) return; // 옵션이 선택되지 않으면 데이터를 가져오지 않음
-
-      const query = document.getElementById('searchInput').value;
-      const selectedOption = document.querySelector(`input[name="option"][data-type="${currentSearchType}"]:checked`).value;
-
-      const response = await fetch(`/search?search_options=${encodeURIComponent(selectedOption)}&keywords=${encodeURIComponent(query)}&page=${page}&limit=${itemsPerPage}`);
-      const data = await response.json();
-      renderCards(data); // 카드 내용 렌더링
-      renderPagination(data.totalPages); // 페이지네이션 렌더링
-    }
-
-    // 검색 결과 카드 렌더링
-    function renderCards(data) {
+    // 카드 생성 및 결과 렌더링
+    function renderCards(results) {
       const cardContainer = document.getElementById('cardContainer');
-      cardContainer.innerHTML = ''; // 이전 결과 제거
+      cardContainer.innerHTML = ''; // 기존 카드들 제거
 
-      data.results.forEach(item => {
-        const card = `
-          <div class="col">
-            <div class="card">
-              <div class="card-body">
-                <h5 class="card-title">${item.title}</h5>
-                <h6 class="card-subtitle mb-2 text-muted">${item.keyword}</h6>
-                <p class="card-text">${item.description}</p>
-                <a href="${item.url}" class="card-link">View Details</a>
-              </div>
+      // 카드 16개씩 나누어 보여주기 위해 페이지네이션 처리
+      const cardsPerPage = 16;
+      const totalPages = Math.ceil(results.length / cardsPerPage);
+      const indexOfLastCard = currentPage * cardsPerPage;
+      const indexOfFirstCard = indexOfLastCard - cardsPerPage;
+      const currentCards = results.slice(indexOfFirstCard, indexOfLastCard);
+
+      // 카드 렌더링
+      currentCards.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'col-md-3'; // 4개씩 가로로 배치 (1페이지에 16개)
+        card.innerHTML = `
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">${item.title}</h5>
+              <p class="card-text">${item.keyword || "No description available"}</p>
+              <a href="${item.url}" class="btn btn-primary" target="_blank">Go to Link</a>
             </div>
           </div>
         `;
-        cardContainer.innerHTML += card;
+        cardContainer.appendChild(card);
       });
+
+      // 페이지네이션 업데이트
+      renderPagination(totalPages);
     }
 
-    // 페이지네이션 렌더링
+    // 페이지네이션 처리
     function renderPagination(totalPages) {
-      const paginationContainer = document.getElementById('pagination');
-      paginationContainer.innerHTML = ''; // 이전 네비게이션 제거
+      const pagination = document.getElementById('pagination');
+      pagination.innerHTML = ''; // 기존 페이지네이션 제거
 
       for (let i = 1; i <= totalPages; i++) {
-        const pageItem = `
-          <li class="page-item ${i === currentPage ? 'active' : ''}">
-            <button class="page-link" onclick="goToPage(${i})">${i}</button>
-          </li>
-        `;
-        paginationContainer.innerHTML += pageItem;
+        const pageItem = document.createElement('li');
+        pageItem.className = `page-item ${i === currentPage ? 'active' : ''}`;
+        pageItem.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i})">${i}</a>`;
+        pagination.appendChild(pageItem);
       }
     }
 
-    // 페이지 변경 함수
-    function goToPage(page) {
-      currentPage = page;
-      fetchData(page);
+    // 페이지 변경
+    function changePage(pageNumber) {
+      currentPage = pageNumber;
+      renderCards(searchResults); // 검색 결과 재렌더링
     }
 
+    // 검색 요청 함수
+    async function handleSearch(event) {
+      event.preventDefault();
+
+      const searchInput = document.getElementById('searchInput').value;
+
+      if (!selectedOption || !searchInput) {
+        alert('Please select a category, an option, and enter a keyword.');
+        return;
+      }
+
+      const postData = {
+        category: selectedOption.category,
+        option: selectedOption.option,
+        keywords: searchInput
+      };
+
+      console.log('Sending search request with data:', postData);
+
+      try {
+        const response = await fetch('http://localhost:5000/search', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(postData)
+        });
+
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const result = await response.json();
+        console.log('Search Results:', result);
+
+        // results 배열을 저장하고 렌더링
+        searchResults = result.results; // result에서 results 배열을 추출
+        currentPage = 1; // 첫 페이지로 초기화
+        renderCards(searchResults); // 카드 렌더링
+
+      } catch (error) {
+        console.error('Error during search:', error);
+      }
+    }
+
+    // 초기화 및 기본 설정
+    document.addEventListener('DOMContentLoaded', () => {
+      toggleOptions('osint'); // 기본은 OSINT 선택
+    });
   </script>
 </head>
+
 <body>
   <div class="container">
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
       <div class="container-fluid">
         <a class="navbar-brand" href="#">Darkweb/Osint Project</a>
-        <form class="d-flex" onsubmit="event.preventDefault(); currentPage = 1; fetchData();">
+        <form class="d-flex" onsubmit="handleSearch(event);">
           <input id="searchInput" class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
           <button class="btn btn-outline-success" type="submit">Search</button>
         </form>
@@ -158,49 +253,21 @@
     <!-- OSINT and Darkweb Buttons -->
     <div class="my-3">
       <button id="osintBtn" class="btn btn-primary" onclick="toggleOptions('osint')">OSINT</button>
-      <button id="darkwebBtn" class="btn btn-dark" onclick="toggleOptions('darkweb')">Darkweb</button>
+      <button id="darkwebBtn" class="btn btn-primary" onclick="toggleOptions('darkweb')">Darkweb</button>
     </div>
 
-    <!-- Options Section (Toggleable) -->
-    <div id="osintOptions" style="display: none;">
-      <div class="my-3">
-        <h5>Select OSINT Options:</h5>
-        <div class="form-check">
-          <input class="form-check-input" type="radio" name="option" value="Option 1" data-type="osint" id="osintOption1" required>
-          <label class="form-check-label" for="osintOption1">Option 1</label>
-        </div>
-        <div class="form-check">
-          <input class="form-check-input" type="radio" name="option" value="Option 2" data-type="osint" id="osintOption2">
-          <label class="form-check-label" for="osintOption2">Option 2</label>
-        </div>
-      </div>
-    </div>
+    <!-- OSINT Options -->
+    <div id="osintOptions" class="options-container"></div>
 
-    <div id="darkwebOptions" style="display: none;">
-      <div class="my-3">
-        <h5>Select Darkweb Options:</h5>
-        <div class="form-check">
-          <input class="form-check-input" type="radio" name="option" value="Option 1" data-type="darkweb" id="darkwebOption1" required>
-          <label class="form-check-label" for="darkwebOption1">Option 1</label>
-        </div>
-        <div class="form-check">
-          <input class="form-check-input" type="radio" name="option" value="Option 2" data-type="darkweb" id="darkwebOption2">
-          <label class="form-check-label" for="darkwebOption2">Option 2</label>
-        </div>
-      </div>
-    </div>
-
+    <!-- Darkweb Options -->
+    <div id="darkwebOptions" class="options-container"></div>
 
     <!-- Card Section -->
-    <div class="row row-cols-1 row-cols-md-3 g-4 mt-3" id="cardContainer">
-      <!-- Cards will be dynamically injected here -->
-    </div>
+    <div class="row row-cols-1 row-cols-md-3 g-4 mt-3" id="cardContainer"></div>
 
     <!-- Pagination -->
     <nav aria-label="Page navigation" class="mt-4">
-      <ul class="pagination justify-content-center" id="pagination">
-        <!-- Pagination buttons will be dynamically injected here -->
-      </ul>
+      <ul class="pagination justify-content-center" id="pagination"></ul>
     </nav>
   </div>
 </body>
