@@ -67,7 +67,6 @@ async def island(db, show=False):
                         print(f"[ERROR] island_crawler.py - island(): {e}")
 
                 next_button = await page.query_selector('li.pagination_linkText__cuIa8 >> text="Next"')
-                print(next_button)
                 if next_button:
                     try:
                         await next_button.click(timeout=3000)
