@@ -12,10 +12,9 @@ async def fetch_page(session, url):
     try:
         async with session.get(url, timeout=15) as response:
             response.raise_for_status()
-            print(f"[INFO] Fetched: {url}")
             return await response.text()
     except Exception as e:
-        print(f"[ERROR] Failed to fetch {url}: {e}")
+        print(f"[ERROR] darknetARMY_crawler.py - fetch_page(): {e}")
         return None
 
 async def process_page(db, session, base_url, page):
@@ -24,11 +23,9 @@ async def process_page(db, session, base_url, page):
     """
     collection = db["darknetARMY"]
     url = f"{base_url}page-{page}"
-    print(f"[INFO] Processing page {page}: {url}")
 
     html_content = await fetch_page(session, url)
     if not html_content:
-        print(f"[WARNING] Skipping page {page} due to fetch failure.")
         return
 
     # BeautifulSoup으로 HTML 파싱
@@ -55,9 +52,6 @@ async def process_page(db, session, base_url, page):
         # 중복 확인 및 저장
         if title and not collection.find_one({"title": title, "posted Time": post_time}):
             collection.insert_one(post_data)
-            print(f"Saved: {post_data}")
-        else:
-            print(f"Skipped (duplicate): {post_data['title'] if title else 'No Title'}")
 
 async def darknetARMY(db):
     """
@@ -83,10 +77,9 @@ if __name__ == "__main__":
     try:
         client = MongoClient(MONGO_URI)
         db = client[DB_NAME]
-        print("[INFO] MongoDB 연결 성공")
 
         # 비동기 실행
         asyncio.run(darknetARMY(db))
 
     except Exception as e:
-        print(f"[ERROR] MongoDB 연결 실패: {e}")
+        print(f"[ERROR] darknetARMY_crawler.py - testing_main(): {e}")

@@ -60,12 +60,9 @@ def crawl_blacksuit_page(url, collection):
                 # 중복 확인 및 데이터 저장
                 if not collection.find_one({"title": result['title'], "post_url": result['post_url']}):
                     collection.insert_one(result)
-                    print(f"Saved: {result['title']}")
-                else:
-                    print(f"Skipped (duplicate): {result['title']}")
 
     except Exception as e:
-        print(f"[ERROR] BlackSuit 크롤링 중 오류 발생: {e}")
+        print(f"[ERROR] blacksuit_crawler.py - crawl_blacksuit_page(): {e}")
 
 
 async def blackbasta(db):
@@ -75,15 +72,10 @@ async def blackbasta(db):
     collection = db["blacksuit"]
     base_url = 'http://weg7sdx54bevnvulapqu6bpzwztryeflq3s23tegbmnhkbpqz637f2yd.onion/'
 
-    print("[INFO] BlackSuit 크롤러 실행 시작...")
-
     # ThreadPoolExecutor를 사용해 비동기적으로 동기 함수 실행
     with ThreadPoolExecutor() as executor:
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(executor, crawl_blacksuit_page, base_url, collection)
-
-    print("[INFO] BlackSuit 크롤러 실행 완료")
-
 
 if __name__ == "__main__":
     # MongoDB 연결 설정

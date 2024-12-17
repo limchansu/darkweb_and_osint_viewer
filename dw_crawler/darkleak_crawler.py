@@ -26,13 +26,12 @@ async def fetch_page(driver, url):
     """
     Selenium으로 페이지를 가져오는 비동기 함수
     """
-    print(f"[INFO] 페이지 로드: {url}")
     try:
         driver.get(url)
         await asyncio.sleep(3)  # 페이지 로드 대기
         return driver.page_source
     except Exception as e:
-        print(f"[ERROR] 페이지 로드 실패: {e}")
+        print(f"[ERROR] darkleak_crawler.py - fetch_page(): {e}")
         return None
 
 async def process_page(db, html, base_url):
@@ -70,17 +69,14 @@ async def process_page(db, html, base_url):
                 # 중복 확인 및 데이터 저장
                 if not await collection.find_one({"file_name": file_name, "url": full_url}):
                     await collection.insert_one(post_data)
-                    print(f"Saved: {file_name}, URL: {full_url}")
-                else:
-                    print(f"Skipped (duplicate): {file_name}")
 
             except ValidationError as e:
-                print(f"[ERROR] 데이터 검증 실패: {e.message}")
+                print(f"[ERROR] darkleak_crawler.py - process_page(): {e.message}")
             except Exception as e:
-                print(f"[ERROR] 데이터 처리 중 오류: {e}")
+                print(f"[ERROR] [ERROR] darkleak_crawler.py - process_page(): {e}")
 
     except Exception as e:
-        print(f"[ERROR] HTML 파싱 중 오류 발생: {e}")
+        print(f"[ERROR] [ERROR] darkleak_crawler.py - process_page(): {e}")
 
 async def darkleak(db):
     """
@@ -109,10 +105,9 @@ async def darkleak(db):
             # 페이지 처리 및 데이터 저장
             await process_page(db, html, base_url)
     except Exception as e:
-        print(f"[ERROR] 크롤링 중 오류 발생: {e}")
+        print(f"[ERROR] [ERROR] darkleak_crawler.py - darkleak(): {e}")
     finally:
         driver.quit()
-        print("[INFO] 드라이버 종료")
 
 if __name__ == "__main__":
     # 비동기 MongoDB 연결

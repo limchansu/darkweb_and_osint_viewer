@@ -23,7 +23,6 @@ def crawl_page(base_url, chromedriver_path, proxy_address, schema, collection):
     driver = webdriver.Chrome(service=service, options=chrome_options)
 
     try:
-        print(f"[INFO] Crawling page: {base_url}")
         driver.get(base_url)
         driver.implicitly_wait(5)  # 페이지 로딩 대기
 
@@ -50,18 +49,16 @@ def crawl_page(base_url, chromedriver_path, proxy_address, schema, collection):
                     # 중복 확인 및 데이터 저장
                     if not collection.find_one({"title": title, "description": description}):
                         collection.insert_one(post_data)
-                        print(f"[INFO] Saved: {title}")
                     else:
-                        print(f"[INFO] Skipped (duplicate): {title}")
 
                 except ValidationError as ve:
-                    print(f"[WARNING] 데이터 검증 실패: {ve.message}")
+                    print(f"[ERROR] abyss_crawler.py - crawl_page(): {ve.message}")
 
             except Exception as e:
-                print(f"[ERROR] 데이터 추출 중 오류 발생: {e}")
+                print(f"[ERROR] abyss_crawler.py - crawl_page(): {e}")
 
     except Exception as e:
-        print(f"[ERROR] 페이지 크롤링 실패: {e}")
+        print(f"[ERROR] abyss_crawler.py - crawl_page(): {e}")
     finally:
         driver.quit()
 

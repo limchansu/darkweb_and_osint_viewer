@@ -36,10 +36,9 @@ async def fetch_json(session, source):
         async with session.get(source["url"], timeout=10) as response:
             response.raise_for_status()
             data = await response.json()
-            print(f"[INFO] 데이터 가져오기 성공: {source['categories']}")
             return source["categories"], data
     except Exception as e:
-        print(f"[ERROR] 데이터 수집 중 오류 발생 ({source['categories']}): {e}")
+        print(f"[ERROR] ctifeeds_crawler.py - fetch_json(): {e}")
         return source["categories"], None
 
 async def process_data(db, source, data):
@@ -56,19 +55,15 @@ async def process_data(db, source, data):
             validate(instance=item, schema=schema)
             if not collection.find_one({"categories": item["categories"], "name": item["name"]}):
                 collection.insert_one(item)
-                print(f"Saved: {item['name']} in category {item['categories']}")
-            else:
-                print(f"Skipped (duplicate): {item['name']} in category {item['categories']}")
         except ValidationError as e:
-            print(f"[ERROR] 데이터 검증 실패 ({item['categories']}): {e.message}")
+            print(f"[ERROR] ctifeeds_crawler.py - process_data(): {e.message}")
         except Exception as e:
-            print(f"[ERROR] 데이터 저장 중 오류 발생: {e}")
+            print(f"[ERROR] ctifeeds_crawler.py - process_data(): {e}")
 
 async def ctifeeds(db):
     """
     ctifeeds 크롤러 실행 및 MongoDB 컬렉션에 비동기적으로 데이터 저장
     """
-    print("[INFO] ctifeeds 크롤러 실행 시작...")
     async with aiohttp.ClientSession() as session:
         tasks = [fetch_json(session, source) for source in json_sources]
         results = await asyncio.gather(*tasks)
@@ -76,8 +71,6 @@ async def ctifeeds(db):
         for source, data in results:
             if data:
                 await process_data(db, source, data)
-
-    print("[INFO] ctifeeds 크롤러 실행 완료")
 
 if __name__ == "__main__":
     # MongoDB 연결 설정

@@ -40,7 +40,6 @@ def crawl_page(category_url, proxy_address, schema, collection):
     driver = webdriver.Chrome(options=chrome_options)
 
     try:
-        print(f"[INFO] Crawling page: {category_url}")
         driver.get(category_url)
 
         # JavaScript 로딩 대기
@@ -84,18 +83,15 @@ def crawl_page(category_url, proxy_address, schema, collection):
                     # 중복 확인 및 데이터 저장
                     if not collection.find_one({"title": title, "url": url}):
                         collection.insert_one(post_data)
-                        print(f"[INFO] Saved: {title}")
-                    else:
-                        print(f"[INFO] Skipped (duplicate): {title}")
 
                 except ValidationError as e:
-                    print(f"[WARNING] 데이터 검증 실패: {e.message}")
+                    print(f"[ERROR] blackbasta_crawler.py - crawl_page(): {e.message}")
 
             except Exception as e:
-                print(f"[ERROR] 데이터 추출 중 오류 발생: {e}")
+                print(f"[ERROR] blackbasta_crawler.py - crawl_page(): {e}")
 
     except Exception as e:
-        print(f"[ERROR] 페이지 크롤링 실패: {e}")
+        print(f"[ERROR] blackbasta_crawler.py - crawl_page(): {e}")
 
     finally:
         driver.quit()

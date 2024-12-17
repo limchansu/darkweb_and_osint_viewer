@@ -15,10 +15,9 @@ async def fetch_page(session, url):
     try:
         async with session.get(url, timeout=30) as response:
             response.raise_for_status()
-            print(f"[INFO] 페이지 가져오기 성공: {url}")
             return await response.text()
     except Exception as e:
-        print(f"[ERROR] 페이지 요청 실패: {url} - {e}")
+        print(f"[ERROR] daixin_crawler.py - fetch_page(): {e}")
         return None
 
 async def process_page(db, html):
@@ -59,14 +58,11 @@ async def process_page(db, html):
                 # 중복 확인 및 데이터 저장
                 if not collection.find_one({"title": result['title'], "company_url": result['company_url']}):
                     collection.insert_one(result)
-                    print(f"Saved: {result['title']}")
-                else:
-                    print(f"Skipped (duplicate): {result['title']}")
 
             except Exception as e:
-                print(f"[ERROR] 데이터 추출 중 오류 발생: {e}")
+                print(f"[ERROR] daixin_crawler.py - process_page(): {e}")
     except Exception as e:
-        print(f"[ERROR] HTML 파싱 중 오류 발생: {e}")
+        print(f"[ERROR] daixin_crawler.py - process_page(): {e}")
 
 async def daixin(db):
     """
@@ -76,13 +72,10 @@ async def daixin(db):
     connector = ProxyConnector.from_url(TOR_PROXY)
 
     async with ClientSession(connector=connector) as session:
-        print("[INFO] Daixin 크롤러 실행 시작...")
         html = await fetch_page(session, url)
 
         if html:
             await process_page(db, html)
-
-    print("[INFO] Daixin 크롤러 실행 완료")
 
 if __name__ == "__main__":
     # MongoDB 연결 설정
