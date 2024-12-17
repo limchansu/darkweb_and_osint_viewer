@@ -1,4 +1,6 @@
 import asyncio
+
+import playwright
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
 from jsonschema import validate
@@ -62,8 +64,12 @@ async def island(db):
                         print(f"[ERROR] island_crawler.py - island(): {e}")
 
                 next_button = await page.query_selector('li.pagination_linkText__cuIa8 >> text="Next"')
+                print(next_button)
                 if next_button:
-                    await next_button.click()
+                    try:
+                        await next_button.click(timeout=10000)
+                    except playwright.async_api.TimeoutError as e:
+                        return
                     await asyncio.sleep(3)
                 else:
                     break
@@ -73,3 +79,4 @@ async def island(db):
 
         finally:
             await browser.close()
+
