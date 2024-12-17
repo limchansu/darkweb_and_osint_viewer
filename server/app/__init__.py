@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS  # 추가된 부분
 from main import setup_database, run_crawling
+import threading
 
 app = Flask(__name__)
 CORS(app)  # 모든 도메인에 대해 CORS를 허용
@@ -55,7 +56,12 @@ def search():
         "results": results
     })
 
-if __name__ == '__main__':
+def initialize_and_run_crawling():
+    """
+    데이터베이스 초기화 및 크롤링 실행
+    """
+    global dw_db, osint_db
+
     # 데이터베이스 생성 및 연결
     dw_collections = ["abyss", "blackbasta", "blacksuit", "breachdetector", "ctifeeds",
                       "daixin", "darkleak", "darknetARMY", "everest", "island",
@@ -68,6 +74,11 @@ if __name__ == '__main__':
     # 크롤링 시작
     print("Starting crawling...")
     run_crawling()
+
+if __name__ == '__main__':
+    # 크롤링 작업을 별도의 스레드에서 실행
+    crawling_thread = threading.Thread(target=initialize_and_run_crawling, daemon=True)
+    crawling_thread.start()
 
     # Flask 애플리케이션 실행
     app.run(debug=True)
