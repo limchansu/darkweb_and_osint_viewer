@@ -35,7 +35,7 @@ async def blackbasta(db):
 
         try:
             await page.goto(category_url, timeout=60000)
-            await asyncio.sleep(7)
+            await asyncio.sleep(10)
             while True:
                 content = await page.content()
                 soup = BeautifulSoup(content, "html.parser")
@@ -69,9 +69,6 @@ async def blackbasta(db):
 
                             if not await collection.find_one({"title": title, "url": url}):
                                 await collection.insert_one(post_data)
-                                print(f"Saved: {title}")
-                            else:
-                                print(f"Skipped (duplicate): {title}")
 
                         except ValidationError as e:
                             print(f"[ERROR] blackbasta_crawler - blackbasta: {e.message}")
@@ -82,6 +79,7 @@ async def blackbasta(db):
                 if next_button:
                     try:
                         await next_button.click(timeout=10000)
+                        await asyncio.sleep(3)
                     except playwright.async_api.TimeoutError as e:
                         return
                 else:
@@ -91,16 +89,3 @@ async def blackbasta(db):
         finally:
             await browser.close()
 
-# 실행 예시
-def main():
-    import motor.motor_asyncio
-
-    async def start():
-        client = motor.motor_asyncio.AsyncIOMotorClient("mongodb://mongo1:30001,mongo2:30002,mongo:30003/?replicaSet=my-rs")
-        db = client["darkweb"]
-        await blackbasta(db)
-
-    asyncio.run(start())
-
-if __name__ == "__main__":
-    main()

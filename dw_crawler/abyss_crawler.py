@@ -46,9 +46,6 @@ async def crawl_page(base_url, proxy_address, schema, collection):
                     # 중복 확인 및 데이터 저장
                     if not collection.find_one({"title": title, "description": description}):
                         collection.insert_one(post_data)
-                        print(f"[INFO] Saved: {title}")
-                    else:
-                        print(f"[INFO] Skipped (duplicate): {title}")
                 except ValidationError as ve:
                     print(f"[ERROR] abyss_crawler.py - crawl_page(): {ve.message}")
 
@@ -89,10 +86,3 @@ async def abyss(db):
     ]
     await asyncio.gather(*tasks)
 
-if __name__ == "__main__":
-    # MongoDB 연결 설정
-    mongo_client = MongoClient("mongodb://localhost:27017/")
-    db = mongo_client["your_database_name"]
-
-    # 비동기 실행
-    asyncio.run(abyss(db))
