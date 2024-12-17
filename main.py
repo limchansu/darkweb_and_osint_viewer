@@ -1,5 +1,8 @@
 import asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
+from dw_crawler.abyss_crawler import abyss
+from dw_crawler.blackbasta_crawler import blackbasta
+from dw_crawler.blacksuit_crawler import blacksuit
 from dw_crawler.htdark_crawler import htdark
 from dw_crawler.island_crawler import island
 from dw_crawler.leakbase_crawler import leakbase
@@ -21,18 +24,22 @@ async def setup_database(db_name, collection_names):
     return db
 
 async def exec_crawler():
-    db_name = 'darkweb'
-    collection_name = ['htdark', 'island', 'leakbase', 'lockbit', 'play', 'rhysida', 'github']
-    db = await setup_database(db_name, collection_name)
+    darkweb_collection_name = ['abyss','blackbasta','ctifeeds','daixin','darknetARMY', 'htdark', 'island', 'leakbase', 'lockbit', 'play', 'rhysida']
+    darweb_db = await setup_database('darkweb', darkweb_collection_name)
+    osint_collection_name = ['github', 'tuts4you', 'x00org']
+    osint_db = await setup_database('osint', osint_collection_name)
 
     await asyncio.gather(
-        htdark(db),
-        island(db),
-        leakbase(db),
-        lockbit(db),
-        play(db),
-        rhysida(db),
-        github(db)
+        abyss(darweb_db),
+        # blackbasta(darweb_db),
+        # blacksuit(darweb_db),
+        # htdark(darweb_db),
+        # island(darweb_db),
+        # leakbase(darweb_db),
+        # lockbit(darweb_db),
+        # play(darweb_db),
+        # rhysida(darweb_db),
+        # github(osint_db)
     )
 
 asyncio.run(exec_crawler())
