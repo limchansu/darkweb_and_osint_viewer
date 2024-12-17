@@ -49,8 +49,9 @@ async def htdark(db):
                 "posted Time": post_time,
             }
 
-            if not collection.find_one({"title": title, "posted Time": post_time}):
-                collection.insert_one(post_data)
+            if not await collection.find_one({"title": title, "posted Time": post_time}):
+                print(post_data)
+                print(await collection.insert_one(post_data))
 
         next_page = soup.find('a', class_='pageNav-jump pageNav-jump--next')
         url = base_url + next_page.get('href') if next_page else None
