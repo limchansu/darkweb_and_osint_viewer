@@ -1,6 +1,5 @@
 import asyncio
 from bs4 import BeautifulSoup
-from datetime import datetime
 from playwright.async_api import async_playwright
 
 
@@ -13,12 +12,9 @@ async def lockbit(db):
         page = await browser.new_page()
 
         try:
-            print(f"[INFO] 페이지 접근: {url}")
-            await page.goto(url, timeout=300000)  # 타임아웃을 5분으로 설정
+            await page.goto(url, timeout=300000)
             await asyncio.sleep(10)
-
             html_content = await page.content()
-            print(html_content)  # 페이지 HTML 내용 출력 (디버깅용)
             soup = BeautifulSoup(html_content, "html.parser")
             items = soup.find_all("a", class_="post-block")
 
@@ -34,15 +30,12 @@ async def lockbit(db):
 
                     if not await collection.find_one({"title": result["title"]}):
                         await collection.insert_one(result)
-                        print(f"Saved: {result['title']}")
-                    else:
-                        print(f"Skipped (duplicate): {result['title']}")
 
                 except Exception as e:
-                    print(f"데이터 처리 중 오류 발생: {e}")
+                    print(f"[ERROR] lockbit_crawler.py - lockbit(): {e}")
 
         except Exception as e:
-            print(f"크롤링 중 오류 발생: {e}")
+            print(f"[ERROR] lockbit_crawler.py - lockbit(): {e}")
 
         finally:
             await browser.close()

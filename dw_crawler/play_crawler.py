@@ -3,7 +3,6 @@ import aiohttp
 from aiohttp import ClientTimeout
 from aiohttp_socks import ProxyConnector
 from bs4 import BeautifulSoup
-from datetime import datetime
 
 
 async def fetch_page(session, url):
@@ -11,7 +10,7 @@ async def fetch_page(session, url):
         async with session.get(url, timeout=ClientTimeout(total=60)) as response:
             return await response.text()
     except Exception as e:
-        print(f"[ERROR] 페이지 요청 실패 ({url}): {e}")
+        print(f"[ERROR] play_crawler.py - fetch_page(): {e}")
         return None
 
 
@@ -24,20 +23,16 @@ async def play(db):
 
     async with aiohttp.ClientSession(connector=connector) as session:
         try:
-            print(f"[INFO] 페이지 접근: {url}")
             html = await fetch_page(session, url)
             if not html:
-                print("[ERROR] 첫 페이지 접근 실패.")
                 return
 
             soup = BeautifulSoup(html, "html.parser")
             pages = soup.find_all("span", class_="Page")
             total_pages = int(pages[-1].text) if pages else 1
-            print(f"[INFO] 총 페이지 수: {total_pages}")
 
             for page_num in range(1, total_pages + 1):
                 page_url = f"{url}index.php?page={page_num}"
-                print(f"[INFO] 페이지 요청: {page_url}")
 
                 page_html = await fetch_page(session, page_url)
                 if not page_html:
@@ -62,7 +57,6 @@ async def play(db):
                             "content": "",
                             "links": [],
                             "rar_password": "",
-                            "crawled_time": str(datetime.now())
                         }
 
                         soup = BeautifulSoup(post_html, "html.parser")
@@ -93,15 +87,12 @@ async def play(db):
 
                         if not await collection.find_one({"title": result["title"]}):
                             await collection.insert_one(result)
-                            print(f"Saved: {result['title']}")
-                        else:
-                            print(f"Skipped (duplicate): {result['title']}")
 
                     except Exception as e:
-                        print(f"[ERROR] 데이터 처리 중 오류 발생: {e}")
+                        print(f"[ERROR] rhysida_crawler.py - play(): {e}")
 
         except Exception as e:
-            print(f"[ERROR] 크롤링 중 오류 발생: {e}")
+            print(f"[ERROR] rhysida_crawler.py - play(): {e}")
 
 
 
