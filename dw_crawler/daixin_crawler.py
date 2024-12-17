@@ -1,29 +1,36 @@
-from requests_tor import RequestsTor
+import asyncio
+from aiohttp_socks import ProxyConnector
+from aiohttp import ClientSession
 from bs4 import BeautifulSoup
+from pymongo import MongoClient
 from datetime import datetime
 
-# RequestsTor 인스턴스 초기화
-rt = RequestsTor(tor_ports=(9050,), tor_cport=9051)
+# Tor 프록시 설정
+TOR_PROXY = "socks5://127.0.0.1:9050"
 
-def run(db):
+async def fetch_page(session, url):
     """
-    Daixin 크롤러 실행 및 MongoDB 컬렉션에 데이터 저장
+    비동기적으로 페이지를 요청하는 함수
+    """
+    try:
+        async with session.get(url, timeout=30) as response:
+            response.raise_for_status()
+            return await response.text()
+    except Exception as e:
+        print(f"[ERROR] daixin_crawler.py - fetch_page(): {e}")
+        return None
+
+async def process_page(db, html):
+    """
+    HTML 데이터를 파싱하고 MongoDB에 저장하는 함수
     """
     collection = db["daixin"]  # MongoDB 컬렉션 선택
-    url = 'http://7ukmkdtyxdkdivtjad57klqnd3kdsmq6tp45rrsxqnu76zzv3jvitlqd.onion/'
-
     try:
-        # Tor 네트워크를 통해 URL 요청
-        r = rt.get(url)
-        r.raise_for_status()
-
-        # BeautifulSoup으로 HTML 파싱
-        soup = BeautifulSoup(r.text, 'html.parser')
+        soup = BeautifulSoup(html, 'html.parser')
         items = soup.find_all("div", class_='border border-warning card-body shadow-lg')
 
         for item in items:
             try:
-                # 데이터 추출
                 result = {}
 
                 # 제목 추출
@@ -51,12 +58,29 @@ def run(db):
                 # 중복 확인 및 데이터 저장
                 if not collection.find_one({"title": result['title'], "company_url": result['company_url']}):
                     collection.insert_one(result)
-                    print(f"Saved: {result['title']}")
-                else:
-                    print(f"Skipped (duplicate): {result['title']}")
 
             except Exception as e:
-                print(f"데이터 추출 중 오류 발생: {e}")
-
+                print(f"[ERROR] daixin_crawler.py - process_page(): {e}")
     except Exception as e:
-        print(f"daixin crawler error: {e}")
+        print(f"[ERROR] daixin_crawler.py - process_page(): {e}")
+
+async def daixin(db):
+    """
+    Daixin 크롤러 비동기 실행 및 MongoDB 컬렉션에 데이터 저장
+    """
+    url = 'http://7ukmkdtyxdkdivtjad57klqnd3kdsmq6tp45rrsxqnu76zzv3jvitlqd.onion/'
+    connector = ProxyConnector.from_url(TOR_PROXY)
+
+    async with ClientSession(connector=connector) as session:
+        html = await fetch_page(session, url)
+
+        if html:
+            await process_page(db, html)
+
+if __name__ == "__main__":
+    # MongoDB 연결 설정
+    mongo_client = MongoClient("mongodb://localhost:27017/")
+    db = mongo_client["your_database_name"]
+
+    # 비동기 실행
+    asyncio.run(daixin(db))

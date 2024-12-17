@@ -1,32 +1,27 @@
-import requests
+import asyncio
+import aiohttp
+from aiohttp_socks import ProxyConnector
 from bs4 import BeautifulSoup
 import json
-import time
+import os
 import re
-from stem import Signal
-from stem.control import Controller
 from datetime import datetime
+from motor.motor_asyncio import AsyncIOMotorClient
 
+# Tor 프록시 설정
+PROXY_URL = "socks5://127.0.0.1:9050"
 
-# Tor 네트워크를 재시작하여 새로운 IP 할당
-def renew_connection():
-    with Controller.from_port(port=9051) as controller:
-        controller.authenticate(password='')  # Tor 비밀번호 설정 (torrc 파일 참고)
-        controller.signal(Signal.NEWNYM)
-        print("New Tor connection requested.")
+# 비동기 Tor 요청 함수
+async def tor_request(session, url):
+    try:
+        async with session.get(url, timeout=30) as response:
+            if response.status == 200:
+                return await response.text()
+    except Exception as e:
+        print(f"[ERROR] tuts4you_crawler.py - tor_request(): {e}")
+    return None
 
-
-# Tor 프록시를 통한 요청 함수
-def tor_request(url, headers=None):
-    proxies = {
-        'http': 'socks5h://127.0.0.1:9050',
-        'https': 'socks5h://127.0.0.1:9050'
-    }
-    response = requests.get(url, headers=headers, proxies=proxies, timeout=30)
-    return response
-
-
-# 초기에 페이지 수를 가져오는 함수
+# 페이지 수 추출 함수
 def get_total_pages(soup):
     pagination_element = soup.find("li", class_="ipsPagination_pageJump")
     if pagination_element:
@@ -34,16 +29,11 @@ def get_total_pages(soup):
         match = re.search(r"Page \d+ of (\d+)", text)
         if match:
             return int(match.group(1))
-    return 1  # 페이지 번호가 없으면 1페이지로 가정
+    return 1
 
-
-# 게시글 필터링 함수
+# 키워드 검사 함수
 def check_page(a_tag, keywords):
-    for keyword in keywords:
-        if keyword in a_tag.get("title", ""):
-            return True
-    return False
-
+    return any(keyword in a_tag.get("title", "") for keyword in keywords)
 
 def check_snippet_for_keywords(a_tag, keywords):
     parent_div = a_tag.find_parent("div", class_="ipsTopicSnippet__top")
@@ -51,69 +41,64 @@ def check_snippet_for_keywords(a_tag, keywords):
         snippet_p = parent_div.find_next_sibling("div", class_="ipsTopicSnippet__snippet")
         if snippet_p:
             snippet_text = snippet_p.get_text(strip=True)
-            keyword_count = sum(1 for keyword in keywords if keyword in snippet_text)
-            return keyword_count >= 5
+            return sum(1 for keyword in keywords if keyword in snippet_text) >= 5
     return False
 
-
 # 페이지 크롤링 함수
-def search_page(db, target_url, keywords):
-    collection = db["tuts4you"]  # MongoDB 컬렉션 선택
-
+async def search_page(session, db, target_url, keywords):
+    collection = db["tuts4you"]
+    
     try:
-        response = tor_request(target_url)
-        if response.status_code != 200:
-            print(f"Failed to fetch the page. Status code: {response.status_code}")
+        html_content = await tor_request(session, target_url)
+        if not html_content:
             return
 
-        soup = BeautifulSoup(response.content, "html.parser")
+        soup = BeautifulSoup(html_content, "html.parser")
         total_pages = get_total_pages(soup)
-        print(f"Total pages to scrape: {total_pages}")
 
         for page_num in range(1, total_pages + 1):
             page_url = f"{target_url}page/{page_num}/" if page_num > 1 else target_url
-            print(f"Scraping page {page_num}: {page_url}")
 
-            response = tor_request(page_url)
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.content, "html.parser")
-                a_tags = soup.find_all("a")
+            page_content = await tor_request(session, page_url)
+            if not page_content:
+                continue
 
-                filtered_links = []
-                for a_tag in a_tags:
-                    if check_page(a_tag, keywords) and check_snippet_for_keywords(a_tag, keywords):
-                        filtered_links.append({"title": a_tag.get("title"), "url": a_tag.get("href")})
+            soup = BeautifulSoup(page_content, "html.parser")
+            a_tags = soup.find_all("a")
 
-                for link in filtered_links:
-                    if not collection.find_one({"title": link["title"]}):
+            for a_tag in a_tags:
+                if check_page(a_tag, keywords) and check_snippet_for_keywords(a_tag, keywords):
+                    title = a_tag.get("title")
+                    url = a_tag.get("href")
+                    if not await collection.find_one({"title": title}):  # 중복 확인
                         post_data = {
-                            "title": link["title"],
-                            "url": link["url"],
-                            "crawled_time": str(datetime.now())
+                            "title": title,
+                            "url": url,
+                            "crawled_time": str(datetime.utcnow())
                         }
-                        collection.insert_one(post_data)
-                        print(f"Saved: {link['title']}")
-                    else:
-                        print(f"Skipped (duplicate): {link['title']}")
-
-            else:
-                print(f"Failed to fetch page {page_num}. Status code: {response.status_code}")
-                break
-
+                        await collection.insert_one(post_data)
     except Exception as e:
-        print(f"Error occurred: {e}")
-        time.sleep(2)
-
+        print(f"[ERROR] tuts4you_crawler.py - search_page(): {e}")
 
 # 메인 실행 함수
-def run(db):
-    """
-    Tuts4You 크롤러 실행 및 MongoDB 컬렉션에 데이터 저장
-    """
-    with open("./cleaned_keywords.json", 'r') as dictionary_json:
-        data = json.load(dictionary_json)
-    keywords = data.get("keywords", [])
+async def tuts4you():
+    # MongoDB 연결
+    client = AsyncIOMotorClient("mongodb://localhost:27017/")
+    db = client["darkweb_db"]
 
+    # 현재 스크립트 기준 경로에서 키워드 파일 로드
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    KEYWORDS_FILE = os.path.join(BASE_DIR, "cleaned_keywords.json")
+    
+    try:
+        with open(KEYWORDS_FILE, 'r') as f:
+            data = json.load(f)
+        keywords = data.get("keywords", [])
+    except FileNotFoundError as e:
+        print(f"[ERROR] tuts4you_crawler.py - tuts4you(): {e}")
+        return
+
+    # 타겟 URL 목록
     target_categories = [
         "https://forum.tuts4you.com/forum/47-programming-and-coding/",
         "https://forum.tuts4you.com/forum/121-programming-resources/",
@@ -124,6 +109,13 @@ def run(db):
         "https://forum.tuts4you.com/forum/93-reverse-engineering-articles/"
     ]
 
-    renew_connection()  # Tor 연결 초기화
-    for category in target_categories:
-        search_page(db, target_url=category, keywords=keywords)
+    # Tor 프록시 커넥터 생성
+    connector = ProxyConnector.from_url(PROXY_URL)
+
+    # 비동기 세션 생성 및 크롤링 작업 수행
+    async with aiohttp.ClientSession(connector=connector) as session:
+        tasks = [search_page(session, db, url, keywords) for url in target_categories]
+        await asyncio.gather(*tasks)
+
+if __name__ == "__main__":
+    asyncio.run(tuts4you())
