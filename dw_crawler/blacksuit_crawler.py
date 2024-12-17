@@ -15,7 +15,7 @@ async def fetch_page(session, url):
         return None
 
 
-async def blacksuit(db):
+async def blacksuit(db, show=False):
 
     url = 'http://weg7sdx54bevnvulapqu6bpzwztryeflq3s23tegbmnhkbpqz637f2yd.onion/'
     connector = ProxyConnector.from_url("socks5://127.0.0.1:9050")
@@ -58,8 +58,9 @@ async def blacksuit(db):
                     result['links'] = links
 
                     if not await collection.find_one({"title": result['title'], "post_url": result['post_url']}):
-                        print(result)
-                        print(await collection.insert_one(result))
+                        obj = await collection.insert_one(result)
+                        if show:
+                            print('blacksuit insert success ' + str(obj.inserted_id))
 
         except Exception as e:
             print(f"[ERROR] blacksuit_crawler.py - crawl_blacksuit_page(): {e}")

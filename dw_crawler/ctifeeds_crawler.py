@@ -41,7 +41,7 @@ async def fetch_json(session, source):
         print(f"[ERROR] ctifeeds_crawler.py - fetch_json(): {e}")
         return source["categories"], None
 
-async def process_data(db, source, data):
+async def process_data(db, source, data, show):
     """
     MongoDB에 데이터를 저장하는 함수
     """
@@ -54,13 +54,15 @@ async def process_data(db, source, data):
         try:
             validate(instance=item, schema=schema)
             if not await collection.find_one({"categories": item["categories"], "name": item["name"]}):
-                await collection.insert_one(item)
+                obj = await collection.insert_one(item)
+                if show:
+                    print('ctifeeds insert success ' + str(obj.inserted_id))
         except ValidationError as e:
             print(f"[ERROR] ctifeeds_crawler.py - process_data(): {e.message}")
         except Exception as e:
             print(f"[ERROR] ctifeeds_crawler.py - process_data(): {e}")
 
-async def ctifeeds(db):
+async def ctifeeds(db, show=False):
     """
     ctifeeds 크롤러 실행 및 MongoDB 컬렉션에 비동기적으로 데이터 저장
     """
@@ -70,7 +72,7 @@ async def ctifeeds(db):
 
         for source, data in results:
             if data:
-                await process_data(db, source, data)
+                await process_data(db, source, data, show)
 
 if __name__ == "__main__":
     # MongoDB 연결 설정

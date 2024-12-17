@@ -33,7 +33,7 @@ async def fetch_page(page, url):
         print(f"[ERROR] darkleak_crawler.py - fetch_page(): {e}")
         return None
 
-async def process_page(db, html, base_url):
+async def process_page(db, html, base_url, show):
     """
     HTML을 파싱하고 데이터를 MongoDB에 저장하는 함수
     """
@@ -66,7 +66,9 @@ async def process_page(db, html, base_url):
 
                 # 중복 확인 및 데이터 저장
                 if not await collection.find_one({"file_name": file_name, "url": full_url}):
-                    await collection.insert_one(post_data)
+                    obj = await collection.insert_one(post_data)
+                    if show:
+                        print('darkleak insert success ' + str(obj.inserted_id))
 
             except ValidationError as e:
                 print(f"[ERROR] darkleak_crawler.py - process_page(): {e.message}")
@@ -76,7 +78,7 @@ async def process_page(db, html, base_url):
     except Exception as e:
         print(f"[ERROR] darkleak_crawler.py - process_page(): {e}")
 
-async def darkleak(db):
+async def darkleak(db, show=False):
     """
     DarkLeak 크롤러 실행 (비동기)
     """
@@ -92,7 +94,7 @@ async def darkleak(db):
             html = await fetch_page(page, category_url)
             if html:
                 # 페이지 처리 및 데이터 저장
-                await process_page(db, html, base_url)
+                await process_page(db, html, base_url, show)
 
             await browser.close()
     except Exception as e:

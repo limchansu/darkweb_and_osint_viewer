@@ -17,7 +17,7 @@ schema = {
     "required": ["title", "url", "description"],
 }
 
-async def blackbasta(db):
+async def blackbasta(db, show=False):
     collection = db["blackbasta"]
     ua = UserAgent()
     random_user_agent = ua.random
@@ -68,7 +68,9 @@ async def blackbasta(db):
                             validate(instance=post_data, schema=schema)
 
                             if not await collection.find_one({"title": title, "url": url}):
-                                await collection.insert_one(post_data)
+                                obj = await collection.insert_one(post_data)
+                                if show:
+                                    print('blackbasta insert success ' + str(obj.inserted_id))
 
                         except ValidationError as e:
                             print(f"[ERROR] blackbasta_crawler - blackbasta: {e.message}")

@@ -15,14 +15,13 @@ async def fetch_page(session, url):
         print(f"[ERROR] darknetARMY_crawler.py - fetch_page(): {e}")
         return None
 
-async def process_page(db, session, base_url):
+async def process_page(db, session, base_url, show):
 
     collection = db["darknetARMY"]
     url = 'http://dna777qhcrxy5sbvk7rkdd2phhxbftpdtxvwibih26nr275cdazx4uyd.onion/whats-new/posts/804733/'
 
     while True:
         html_content = await fetch_page(session, url)
-        print(f"Processing URL: {url}")
         if not html_content:
             return
 
@@ -49,7 +48,9 @@ async def process_page(db, session, base_url):
             }
 
             if title and not await collection.find_one({"title": title, "posted Time": post_time}):
-                await collection.insert_one(post_data)
+                obj = await collection.insert_one(post_data)
+                if show:
+                    print('darknetARMY insert success ' + str(obj.inserted_id))
 
         page = soup.find('a', class_='pageNav-jump pageNav-jump--next')
         if page and 'href' in page.attrs:
@@ -57,7 +58,7 @@ async def process_page(db, session, base_url):
         else:
             break
 
-async def darknetARMY(db):
+async def darknetARMY(db, show=False):
 
     base_url = "http://dna777qhcrxy5sbvk7rkdd2phhxbftpdtxvwibih26nr275cdazx4uyd.onion/"
     proxy_url = "socks5://127.0.0.1:9050"
@@ -66,4 +67,4 @@ async def darknetARMY(db):
     headers = {"User-Agent": "Mozilla/5.0"}
 
     async with aiohttp.ClientSession(connector=connector, headers=headers) as session:
-        await process_page(db, session, base_url)
+        await process_page(db, session, base_url, show)

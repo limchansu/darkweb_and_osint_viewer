@@ -73,11 +73,8 @@ async def verify_keywords_in_content(session, url, keywords):
     return any(content.lower().count(keyword.lower()) >= 3 for keyword in keywords)
 
 # 크롤링 실행 함수
-async def x00org():
-    # MongoDB 연결
-    client = AsyncIOMotorClient("mongodb://localhost:27017/")
-    db = client["darkweb_db"]
-    collection = db["0x00org"]
+async def x00org(db, show=False):
+    collection = db["x00org"]
 
     # 키워드 파일 로드
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -133,7 +130,8 @@ async def x00org():
                             "keywords": post["keywords"],
                             "crawled_time": str(datetime.now())
                         }
-                        await collection.insert_one(post_data)
 
-if __name__ == "__main__":
-    asyncio.run(x00org())
+                        obj = await collection.insert_one(post_data)
+                        if show:
+                            print('x00org insert success ' + str(obj.inserted_id))
+

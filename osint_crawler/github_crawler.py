@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 GITHUB_TOKEN = ""
 GITHUB_API_URL = 'https://api.github.com/search/repositories'
-JSON_FILE_PATH = './cleaned_keywords.json'
+JSON_FILE_PATH = './osint_crawler/cleaned_keywords.json'
 MIN_KEYWORDS_MATCH = 20
 DAYS_AGO = 730
 
@@ -51,7 +51,7 @@ async def search_github(session, keyword):
         print(f"[ERROR] github_crawler.py - serch_github(): {e}")
         return []
 
-async def github(db):
+async def github(db, show=False):
     with open(JSON_FILE_PATH, 'r') as file:
         data = json.load(file)
 
@@ -79,4 +79,6 @@ async def github(db):
 
                         existing = await collection.find_one({"repo_name": repo_info['repo_name']})
                         if not existing:
-                            await collection.insert_one(repo_info)
+                            obj = await collection.insert_one(repo_info)
+                            if show:
+                                print('github insert success ' + str(obj.inserted_id))

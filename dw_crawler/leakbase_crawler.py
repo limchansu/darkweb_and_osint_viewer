@@ -3,7 +3,7 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
 
-async def leakbase(db):
+async def leakbase(db, show=False):
     collection = db["leakbase"]
     url = "https://leakbase.io/"
     async with async_playwright() as p:
@@ -35,7 +35,9 @@ async def leakbase(db):
                 }
 
                 if title and not await collection.find_one({"title": title}):
-                    await collection.insert_one(post_data)
+                    obj = await collection.insert_one(post_data)
+                    if show:
+                        print('leakbase insert success ' + str(obj.inserted_id))
 
         except Exception as e:
             print(f"[ERROR] leakbase_crawler.py - leakbase(): {e}")

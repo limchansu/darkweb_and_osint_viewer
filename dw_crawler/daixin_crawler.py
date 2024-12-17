@@ -18,7 +18,7 @@ async def fetch_page(session, url):
         print(f"[ERROR] daixin_crawler.py - fetch_page(): {e}")
         return None
 
-async def process_page(db, html):
+async def process_page(db, html, show):
 
     collection = db["daixin"]
     try:
@@ -47,14 +47,16 @@ async def process_page(db, html):
 
 
                 if not await collection.find_one({"title": result['title'], "company_url": result['company_url']}):
-                    await collection.insert_one(result)
+                    obj = await collection.insert_one(result)
+                    if show:
+                        print('daixin insert success ' + str(obj.inserted_id))
 
             except Exception as e:
                 print(f"[ERROR] daixin_crawler.py - process_page(): {e}")
     except Exception as e:
         print(f"[ERROR] daixin_crawler.py - process_page(): {e}")
 
-async def daixin(db):
+async def daixin(db, show=False):
 
     url = 'http://7ukmkdtyxdkdivtjad57klqnd3kdsmq6tp45rrsxqnu76zzv3jvitlqd.onion/'
     connector = ProxyConnector.from_url(TOR_PROXY)

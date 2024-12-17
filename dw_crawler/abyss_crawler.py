@@ -6,7 +6,7 @@ from datetime import datetime
 from jsonschema import validate, ValidationError
 from pymongo import MongoClient
 
-async def crawl_page(base_url, proxy_address, schema, collection):
+async def crawl_page(base_url, proxy_address, schema, collection, show):
     """
     개별 페이지를 크롤링하는 비동기 함수 (Playwright 사용)
     """
@@ -45,7 +45,10 @@ async def crawl_page(base_url, proxy_address, schema, collection):
 
                     # 중복 확인 및 데이터 저장
                     if not await collection.find_one({"title": title, "description": description}):
-                        await collection.insert_one(post_data)
+                        obj = await collection.insert_one(post_data)
+                        if show:
+                            print('abyss insert success ' + str(obj.inserted_id))
+
                 except ValidationError as ve:
                     print(f"[ERROR] abyss_crawler.py - crawl_page(): {ve.message}")
 
@@ -55,7 +58,7 @@ async def crawl_page(base_url, proxy_address, schema, collection):
     except Exception as e:
         print(f"[ERROR] abyss_crawler.py - crawl_page(): {e}")
 
-async def abyss(db):
+async def abyss(db, show=False):
     """
     Abyss 크롤러 실행 및 MongoDB 컬렉션에 데이터 저장 (비동기 실행)
     """
@@ -82,7 +85,7 @@ async def abyss(db):
 
     # 비동기 실행
     tasks = [
-        crawl_page(url, proxy_address, schema, collection) for url in base_urls
+        crawl_page(url, proxy_address, schema, collection, show) for url in base_urls
     ]
     await asyncio.gather(*tasks)
 
