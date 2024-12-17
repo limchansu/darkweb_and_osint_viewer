@@ -53,8 +53,8 @@ async def process_data(db, source, data):
         # JSON Schema 검증 및 저장
         try:
             validate(instance=item, schema=schema)
-            if not collection.find_one({"categories": item["categories"], "name": item["name"]}):
-                collection.insert_one(item)
+            if not await collection.find_one({"categories": item["categories"], "name": item["name"]}):
+                await collection.insert_one(item)
         except ValidationError as e:
             print(f"[ERROR] ctifeeds_crawler.py - process_data(): {e.message}")
         except Exception as e:

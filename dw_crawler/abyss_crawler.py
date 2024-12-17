@@ -44,8 +44,8 @@ async def crawl_page(base_url, proxy_address, schema, collection):
                     validate(instance=post_data, schema=schema)
 
                     # 중복 확인 및 데이터 저장
-                    if not collection.find_one({"title": title, "description": description}):
-                        collection.insert_one(post_data)
+                    if not await collection.find_one({"title": title, "description": description}):
+                        await collection.insert_one(post_data)
                 except ValidationError as ve:
                     print(f"[ERROR] abyss_crawler.py - crawl_page(): {ve.message}")
 

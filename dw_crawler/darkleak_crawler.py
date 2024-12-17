@@ -25,7 +25,6 @@ async def fetch_page(page, url):
     Playwright를 사용해 페이지를 가져오는 비동기 함수
     """
     try:
-        print(f"[INFO] Fetching URL: {url}")
         await page.goto(url, timeout=60000)
         await asyncio.sleep(3)  # 페이지 로드 대기
         return await page.content()
@@ -60,7 +59,6 @@ async def process_page(db, html, base_url):
                 post_data = {
                     "file_name": file_name,
                     "url": full_url,
-                    "crawled_time": str(datetime.now())
                 }
 
                 # JSON Schema 검증
@@ -69,7 +67,7 @@ async def process_page(db, html, base_url):
                 # 중복 확인 및 데이터 저장
                 if not await collection.find_one({"file_name": file_name, "url": full_url}):
                     await collection.insert_one(post_data)
-                    print(f"[INFO] Saved: {file_name}")
+
             except ValidationError as e:
                 print(f"[ERROR] darkleak_crawler.py - process_page(): {e.message}")
             except Exception as e:
@@ -99,12 +97,3 @@ async def darkleak(db):
             await browser.close()
     except Exception as e:
         print(f"[ERROR] darkleak_crawler.py - darkleak(): {e}")
-
-if __name__ == "__main__":
-    # 비동기 MongoDB 연결
-    MONGO_URI = "mongodb://localhost:27017"
-    mongo_client = AsyncIOMotorClient(MONGO_URI)
-    db = mongo_client["your_database_name"]
-
-    # 비동기 실행
-    asyncio.run(darkleak(db))
