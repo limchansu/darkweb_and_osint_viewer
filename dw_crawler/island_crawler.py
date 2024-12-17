@@ -1,94 +1,97 @@
-import os
-import time
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from bs4 import BeautifulSoup
-from jsonschema import validate, ValidationError
+import asyncio
 from datetime import datetime
+from bs4 import BeautifulSoup
+from playwright.async_api import async_playwright
+from jsonschema import validate, ValidationError
 
-def run(db):
+async def island(db):
     """
-    Island 크롤러 실행 및 MongoDB 컬렉션에 데이터 저장
+    Playwright를 사용해 Island 사이트 크롤링 및 MongoDB에 비동기 저장
     """
-    collection = db["island"]  # MongoDB 컬렉션 선택
+    collection = db["island"]
 
-    # 크롤링 대상 URL (onion 사이트)
-    base_url = "https://crackingisland.net/"  # onion 사이트 URL로 변경 필요 시 업데이트
+    # 크롤링 대상 URL 및 프록시 설정
+    base_url = "https://crackingisland.net"
     category_url = f"{base_url}/categories/combolists"
+    proxy_address = "socks5://127.0.0.1:9050"
 
+    # JSON Schema 설정
+    schema = {
+        "type": "object",
+        "properties": {
+            "title": {"type": "string"},
+            "url": {"type": "string"},
+            "type": {"type": "string"},
+            "dateCreated": {"type": "string"},
+            "description": {"type": "string"},
+            "crawled_time": {"type": "string"},
+        },
+        "required": ["title", "url", "type", "dateCreated", "description"],
+    }
 
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        context = await browser.new_context(proxy={"server": proxy_address})
+        page = await context.new_page()
 
-    # Selenium WebDriver 옵션 설정
-    proxy_address = "127.0.0.1:9050"  # TOR SOCKS5 프록시 주소
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument(f"--proxy-server=socks5://{proxy_address}")
+        try:
+            # 페이지 열기
+            print(f"[INFO] 페이지 접근: {category_url}")
+            await page.goto(category_url, timeout=60000)
+            await asyncio.sleep(5)  # 페이지 로딩 대기
 
-    # WebDriver 초기화
-    driver = webdriver.Chrome(options=chrome_options)
+            while True:  # Next 버튼을 눌러가며 계속 반복
+                # HTML 파싱
+                html_content = await page.content()
+                soup = BeautifulSoup(html_content, "html.parser")
+                posts = soup.find_all("a", itemprop="url")
 
-    try:
-        # Selenium으로 페이지 열기
-        driver.get(category_url)
-        time.sleep(5)  # JavaScript 로딩 대기
+                # 게시글 데이터 처리
+                for post in posts:
+                    try:
+                        title = post.find("h2", itemprop="headline").text.strip()
+                        post_url = base_url + post["href"]
+                        post_type = post.find("span", itemprop="about").text.strip()
+                        post_date = post.find("span", itemprop="dateCreated").text.strip()
+                        description = post.find("p", itemprop="text")
+                        description = description.text.strip() if description else ''
 
-        # BeautifulSoup으로 HTML 파싱
-        soup = BeautifulSoup(driver.page_source, "html.parser")
-        posts = soup.find_all("a", itemprop="url")
+                        post_data = {
+                            "title": title,
+                            "url": post_url,
+                            "type": post_type,
+                            "dateCreated": post_date,
+                            "description": description,
+                            "crawled_time": str(datetime.now()),
+                        }
+                        print(post_data)
+                        # JSON Schema 검증
+                        validate(instance=post_data, schema=schema)
 
-        for post in posts:
-            try:
-                # 데이터 추출
-                title = post.find("h2", itemprop="headline").text.strip()
-                post_url = base_url + post["href"]
-                post_type = post.find("span", itemprop="about").text.strip()
-                post_date = post.find("span", itemprop="dateCreated").text.strip()
-                description = post.find("p", itemprop="text").text.strip()
+                        # 중복 확인 및 저장
+                        if not await collection.find_one({"title": title, "url": post_url}):
+                            await collection.insert_one(post_data)
+                            print(f"Saved: {title}")
+                        else:
+                            print(f"Skipped (duplicate): {title}")
 
-                # 데이터 생성
-                post_data = {
-                    "title": title,
-                    "url": post_url,
-                    "type": post_type,
-                    "dateCreated": post_date,
-                    "description": description,
-                    "crawled_time": str(datetime.now()),  # 크롤링 시간 추가
-                }
+                    except ValidationError as ve:
+                        print(f"[ERROR] 데이터 검증 실패: {ve.message}")
+                    except Exception as e:
+                        print(f"[ERROR] 데이터 처리 중 오류 발생: {e}")
 
-                # JSON Schema 검증
-                schema = {
-                    "type": "object",
-                    "properties": {
-                        "title": {"type": "string"},
-                        "url": {"type": "string"},
-                        "type": {"type": "string"},
-                        "dateCreated": {"type": "string"},
-                        "description": {"type": "string"},
-                        "crawled_time": {"type": "string"},
-                    },
-                    "required": ["title", "url", "type", "dateCreated", "description"],
-                }
+                # Next 버튼 클릭 시도
+                next_button = await page.query_selector('li.pagination_linkText__cuIa8 >> text="Next"')
+                if next_button:
+                    print("[INFO] Next 버튼 클릭")
+                    await next_button.click()
+                    await asyncio.sleep(3)  # 페이지 로딩 대기
+                else:
+                    print("[INFO] 더 이상 Next 버튼이 없습니다. 크롤링 완료.")
+                    break
 
-                try:
-                    validate(instance=post_data, schema=schema)
+        except Exception as e:
+            print(f"[ERROR] 크롤링 중 오류 발생: {e}")
 
-                    # 중복 확인 및 데이터 저장
-                    if not collection.find_one({"title": title, "url": post_url}):
-                        collection.insert_one(post_data)
-                        print(f"Saved: {title}")
-                    else:
-                        print(f"Skipped (duplicate): {title}")
-
-                except ValidationError as e:
-                    print(f"데이터 검증 실패: {e.message}")
-
-            except Exception as e:
-                print(f"데이터 추출 중 오류 발생: {e}")
-
-    except Exception as e:
-        print(f"크롤링 중 오류 발생: {e}")
-
-    finally:
-        driver.quit()
+        finally:
+            await browser.close()
