@@ -1,8 +1,6 @@
 import os
 import asyncio
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium import webdriver
+from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
 from jsonschema import validate, ValidationError
 from datetime import datetime
@@ -22,14 +20,15 @@ SCHEMA = {
 # TOR Proxy 설정
 TOR_PROXY = "socks5://127.0.0.1:9050"
 
-async def fetch_page(driver, url):
+async def fetch_page(page, url):
     """
-    Selenium으로 페이지를 가져오는 비동기 함수
+    Playwright를 사용해 페이지를 가져오는 비동기 함수
     """
     try:
-        driver.get(url)
+        print(f"[INFO] Fetching URL: {url}")
+        await page.goto(url, timeout=60000)
         await asyncio.sleep(3)  # 페이지 로드 대기
-        return driver.page_source
+        return await page.content()
     except Exception as e:
         print(f"[ERROR] darkleak_crawler.py - fetch_page(): {e}")
         return None
@@ -69,14 +68,14 @@ async def process_page(db, html, base_url):
                 # 중복 확인 및 데이터 저장
                 if not await collection.find_one({"file_name": file_name, "url": full_url}):
                     await collection.insert_one(post_data)
-
+                    print(f"[INFO] Saved: {file_name}")
             except ValidationError as e:
                 print(f"[ERROR] darkleak_crawler.py - process_page(): {e.message}")
             except Exception as e:
-                print(f"[ERROR] [ERROR] darkleak_crawler.py - process_page(): {e}")
+                print(f"[ERROR] darkleak_crawler.py - process_page(): {e}")
 
     except Exception as e:
-        print(f"[ERROR] [ERROR] darkleak_crawler.py - process_page(): {e}")
+        print(f"[ERROR] darkleak_crawler.py - process_page(): {e}")
 
 async def darkleak(db):
     """
@@ -85,29 +84,20 @@ async def darkleak(db):
     base_url = "http://darkleakyqmv62eweqwy4dnhaijg4m4dkburo73pzuqfdumcntqdokyd.onion"
     category_url = f"{base_url}/index.html"
 
-    # ChromeDriver 설정
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    chromedriver_path = os.path.join(current_dir, "chromedriver.exe")
-
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument(f"--proxy-server={TOR_PROXY}")
-    chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
-
-    service = Service(chromedriver_path)
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-
     try:
-        # 페이지 가져오기
-        html = await fetch_page(driver, category_url)
-        if html:
-            # 페이지 처리 및 데이터 저장
-            await process_page(db, html, base_url)
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True, proxy={"server": TOR_PROXY})
+            page = await browser.new_page()
+
+            # 페이지 가져오기
+            html = await fetch_page(page, category_url)
+            if html:
+                # 페이지 처리 및 데이터 저장
+                await process_page(db, html, base_url)
+
+            await browser.close()
     except Exception as e:
-        print(f"[ERROR] [ERROR] darkleak_crawler.py - darkleak(): {e}")
-    finally:
-        driver.quit()
+        print(f"[ERROR] darkleak_crawler.py - darkleak(): {e}")
 
 if __name__ == "__main__":
     # 비동기 MongoDB 연결
