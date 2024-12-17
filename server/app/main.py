@@ -38,7 +38,7 @@ def setup_database(db_name, collection_names):
     return db
 
 
-def run_db():
+def run_crawling():
     dw_collections = ["abyss", "blackbasta", "blacksuit", "breachdetector", "ctifeeds",
                         "daixin", "darkleak", "darknetARMY", "everest", "island",
                         "leakbase", "lockbit", "play", "rhysida", "htdark"]

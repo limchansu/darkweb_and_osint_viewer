@@ -1,9 +1,13 @@
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS  # 추가된 부분
-from main import setup_database
+from main import setup_database, run_crawling
 
 app = Flask(__name__)
 CORS(app)  # 모든 도메인에 대해 CORS를 허용
+
+# 전역 변수로 데이터베이스 연결 유지
+dw_db = None
+osint_db = None
 
 @app.route('/')
 def index():
@@ -17,17 +21,6 @@ def search():
     keywords = data.get('keywords', '').strip()  # 검색어
     category = data.get('category', '')
     option = data.get('option', '')
-
-    # 데이터베이스 연결
-    dw_collections = ["abyss", "blackbasta", "blacksuit", "breachdetector", "ctifeeds",
-                        "daixin", "darkleak", "darknetARMY", "everest", "island",
-                        "leakbase", "lockbit", "play", "rhysida", "htdark"]
-    dw_db = setup_database("darkweb", dw_collections)
-
-    osint_collections = ["github", "tuts4you", "0x00org"]
-    osint_db = setup_database("osint", osint_collections)
-
-    print(dw_db, osint_db)
 
     # 초기화
     db_collection = None
@@ -63,4 +56,18 @@ def search():
     })
 
 if __name__ == '__main__':
+    # 데이터베이스 생성 및 연결
+    dw_collections = ["abyss", "blackbasta", "blacksuit", "breachdetector", "ctifeeds",
+                      "daixin", "darkleak", "darknetARMY", "everest", "island",
+                      "leakbase", "lockbit", "play", "rhysida", "htdark"]
+    dw_db = setup_database("darkweb", dw_collections)
+
+    osint_collections = ["github", "tuts4you", "0x00org"]
+    osint_db = setup_database("osint", osint_collections)
+
+    # 크롤링 시작
+    print("Starting crawling...")
+    run_crawling()
+
+    # Flask 애플리케이션 실행
     app.run(debug=True)

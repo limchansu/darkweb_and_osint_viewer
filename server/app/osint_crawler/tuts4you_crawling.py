@@ -126,4 +126,4 @@ async def run(db):
 
     renew_connection()  # Tor 연결 초기화
     for category in target_categories:
-        await search_page(db, target_url=category, keywords=keywords)
+        search_page(db, target_url=category, keywords=keywords)
