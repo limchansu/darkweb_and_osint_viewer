@@ -2,7 +2,7 @@ import asyncio
 import aiohttp
 from aiohttp_socks import ProxyConnector
 from bs4 import BeautifulSoup
-
+from .config import TOR_PROXY
 
 
 async def fetch_page(session, url):
@@ -18,7 +18,7 @@ async def fetch_page(session, url):
 async def blacksuit(db, show=False):
 
     url = 'http://weg7sdx54bevnvulapqu6bpzwztryeflq3s23tegbmnhkbpqz637f2yd.onion/'
-    connector = ProxyConnector.from_url("socks5://tor:9050")
+    connector = ProxyConnector.from_url(TOR_PROXY)
     collection = db['blacksuit']
     async with aiohttp.ClientSession(connector=connector) as session:
         try:

@@ -3,10 +3,7 @@ from aiohttp_socks import ProxyConnector
 from aiohttp import ClientSession
 from bs4 import BeautifulSoup
 from pymongo import MongoClient
-from datetime import datetime
-
-
-TOR_PROXY = "socks5://127.0.0.1:9050"
+from .config import TOR_PROXY
 
 async def fetch_page(session, url):
 

@@ -3,6 +3,7 @@ from aiohttp_socks import ProxyConnector
 from aiohttp import ClientSession, ClientTimeout
 from bs4 import BeautifulSoup
 import chardet
+from .config import TOR_PROXY
 
 
 
@@ -23,9 +24,8 @@ async def fetch_page(session, url):
 async def rhysida(db, show=False):
     collection = db["rhysida"]
     url = 'http://rhysidafohrhyy2aszi7bm32tnjat5xri65fopcxkdfxhi4tidsg7cad.onion/archive.php'
-    proxy = "socks5://127.0.0.1:9050"
 
-    connector = ProxyConnector.from_url(proxy)
+    connector = ProxyConnector.from_url(TOR_PROXY)
 
     async with ClientSession(connector=connector) as session:
         html = await fetch_page(session, url)

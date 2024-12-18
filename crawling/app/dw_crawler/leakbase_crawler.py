@@ -2,12 +2,13 @@ import asyncio
 from datetime import datetime
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
+from .config import TOR_PROXY
 
 async def leakbase(db, show=False):
     collection = db["leakbase"]
     url = "https://leakbase.io/"
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True, proxy={"server": "socks5://127.0.0.1:9050"})
+        browser = await p.chromium.launch(headless=True, proxy={"server": TOR_PROXY})
         page = await browser.new_page()
         try:
             await page.goto(url, timeout=60000)

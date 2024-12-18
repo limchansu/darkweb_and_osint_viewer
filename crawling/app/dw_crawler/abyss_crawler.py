@@ -5,8 +5,9 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 from jsonschema import validate, ValidationError
 from pymongo import MongoClient
+from .config import TOR_PROXY
 
-async def crawl_page(base_url, proxy_address, schema, collection, show):
+async def crawl_page(base_url, schema, collection, show):
     """
     개별 페이지를 크롤링하는 비동기 함수 (Playwright 사용)
     """
@@ -15,9 +16,10 @@ async def crawl_page(base_url, proxy_address, schema, collection, show):
             browser = await p.chromium.launch(
                 headless=True,
                 proxy={
-                    "server": f"socks5://{proxy_address}"
+                    "server": TOR_PROXY
                 }
             )
+            print(TOR_PROXY)
             page = await browser.new_page()
             await page.goto(base_url, timeout=60000)
             content = await page.content()
@@ -64,8 +66,6 @@ async def abyss(db, show=False):
     """
     collection = db["abyss"]  # MongoDB 컬렉션 선택
 
-    # 프록시 주소 (Tor SOCKS5)
-    proxy_address = "127.0.0.1:9050"
 
     # JSON Schema 정의
     schema = {
@@ -85,7 +85,7 @@ async def abyss(db, show=False):
 
     # 비동기 실행
     tasks = [
-        crawl_page(url, proxy_address, schema, collection, show) for url in base_urls
+        crawl_page(url, schema, collection, show) for url in base_urls
     ]
     await asyncio.gather(*tasks)
 

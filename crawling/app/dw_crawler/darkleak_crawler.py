@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from jsonschema import validate, ValidationError
 from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorClient  # 비동기 MongoDB 클라이언트
-
+from .config import TOR_PROXY
 # JSON Schema 정의
 SCHEMA = {
     "type": "object",
@@ -17,8 +17,6 @@ SCHEMA = {
     "required": ["title", "url"]
 }
 
-# TOR Proxy 설정
-TOR_PROXY = "socks5://127.0.0.1:9050"
 
 async def fetch_page(page, url):
     """

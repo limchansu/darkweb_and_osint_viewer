@@ -4,7 +4,7 @@ import asyncio
 import threading
 import sys, os, time
 
-TOR_PROXY = os.getenv("TOR_PROXY", "127.0.0.1:9050")
+TOR_PROXY = "socks5://tor:9050"
 
 # Flask 앱 초기화
 app = Flask(__name__)
