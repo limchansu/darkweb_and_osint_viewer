@@ -207,14 +207,31 @@
         return `<ul>${data.map(item => `<li>${renderData(item, maxChars)}</li>`).join('')}</ul>`;
       }
 
-      // `_id` 키가 존재할 경우, 날짜 형식으로 변환
-      return `<div>${Object.entries(data).map(([key, value]) => {
-        if (key === '_id') {
-          const timestamp = new Date(value).toLocaleString(); // UTC 시간을 로컬 시간으로 변환
-          return `<div><strong>${truncate(key, maxChars)}:</strong><div style="margin-left: 10px;">${timestamp}</div></div>`;
-        }
-        return `<div><strong>${truncate(key, maxChars)}:</strong><div style="margin-left: 10px;">${renderData(value, maxChars)}</div></div>`;
-      }).join('')}</div>`;
+      // title 키를 맨 위로 놓고, _id 키 이름을 crawling time으로 변경
+      return `<div>${Object.entries(data)
+        .sort(([keyA], [keyB]) => {
+          if (keyA === 'title') return -1; // title을 가장 먼저 배치
+          if (keyB === 'title') return 1;
+          return 0; // 나머지는 순서를 유지
+        })
+        .map(([key, value]) => {
+          if (key === '_id') {
+            let timestamp;
+            try {
+              // MongoDB ObjectID의 타임스탬프 추출(by chat-GPT)
+              if (typeof value === 'string' && /^[a-f\d]{24}$/i.test(value)) {
+                const objectIdTimestamp = parseInt(value.substring(0, 8), 16) * 1000; // 16진수 → 타임스탬프
+                timestamp = new Date(objectIdTimestamp).toLocaleString();
+              } else {
+                timestamp = new Date(value).toLocaleString(); // 일반적인 날짜 형식 처리
+              }
+            } catch {
+              timestamp = 'Invalid Date'; // 변환 실패 시 기본값
+            }
+            return `<div><strong>${truncate('crawling time', maxChars)}:</strong><div style="margin-left: 10px; margin-bottom: 10px;">${timestamp}</div></div>`;
+          }
+          return `<div><strong>${truncate(key, maxChars)}:</strong><div style="margin-left: 10px;">${renderData(value, maxChars)}</div></div>`;
+        }).join('')}</div>`;
     }
 
     // 페이지네이션

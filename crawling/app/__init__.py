@@ -12,7 +12,6 @@ CORS(app)
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 from main import setup_database, run_crawler_periodically
 
-# 라우팅 핸들러들은 그대로 유지...
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -58,7 +57,6 @@ async def search():
                 return jsonify({"error": f"Invalid collection '{option}' in darkweb"}), 400
             db_collection = dw_db[option]
         else:
-            print("얜 뭐임?")
             return jsonify({"error": "Invalid category or option"}), 400
 
         # 검색 필터
@@ -75,12 +73,11 @@ async def search():
     return jsonify({"results": results})
 
 
-
-
 def run_flask():
     """Flask 서버를 별도의 쓰레드에서 실행"""
     print("[START] Flask 웹 서버를 실행합니다...")
     app.run(debug=False, use_reloader=False, threaded=True)
+
 
 def run_async_crawler():
     """비동기 크롤러를 별도의 이벤트 루프에서 실행"""
