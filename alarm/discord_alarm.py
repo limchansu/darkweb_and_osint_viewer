@@ -72,8 +72,9 @@ def discord_agent():
     @bot.event
     async def on_ready():
         print(f'Logged in as {bot.user}')
-        asyncio.create_task(darkweb_monitor(client['web_crawler']))
+        asyncio.create_task(darkweb_monitor(client['darkweb']))
         asyncio.create_task(osint_monitor(client['osint']))
 
     bot.run(TOKEN)
 
+discord_agent()
