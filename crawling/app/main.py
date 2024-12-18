@@ -37,20 +37,20 @@ async def exec_crawler():
     osint_db = await setup_database('osint', osint_collection_name)
 
     await asyncio.gather(
-        abyss(darkweb_db, False),
-        blackbasta(darkweb_db, False),
-        blacksuit(darkweb_db, False),
-        ctifeeds(darkweb_db, False),
-        daixin(darkweb_db, False),
-        darkleak(darkweb_db, False),
-        darknetARMY(darkweb_db, False),
-        htdark(darkweb_db, False),
-        island(darkweb_db, False),
-        leakbase(darkweb_db, False),
-        lockbit(darkweb_db, False),
-        play(darkweb_db, False),
-        rhysida(darkweb_db, False),
-        github(osint_db, False),
-        tuts4you(osint_db, False),
-        x00org(osint_db, False)
+        # abyss(darkweb_db, False),
+        # blackbasta(darkweb_db, False),
+        blacksuit(darkweb_db, True),
+        # ctifeeds(darkweb_db, False),
+        # daixin(darkweb_db, False),
+        # darkleak(darkweb_db, False),
+        # darknetARMY(darkweb_db, False),
+        # htdark(darkweb_db, False),
+        # island(darkweb_db, False),
+        # leakbase(darkweb_db, False),
+        # lockbit(darkweb_db, False),
+        # play(darkweb_db, False),
+        # rhysida(darkweb_db, False),
+        # github(osint_db, False),
+        # tuts4you(osint_db, False),
+        # x00org(osint_db, False)
     )

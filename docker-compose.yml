@@ -69,8 +69,23 @@ services:
       - mongo1
       - mongo2
       - mongo3
+    environment:
+      - TOR_PROXY=tor:9050
+    networks:
+      - my-cluster
+
+  tor:
+    container_name: tor
+    image: dockurr/tor
+    ports:
+      - 9050:9050
+      - 9051:9051
+    volumes:
+      - ./torrc:/etc/tor/torrc
+      - ./data:/var/lib/tor
     networks:
       - my-cluster
 
 networks:
   my-cluster:
+    driver: bridge

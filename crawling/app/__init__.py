@@ -4,6 +4,8 @@ import asyncio
 import threading
 import sys, os, time
 
+TOR_PROXY = os.getenv("TOR_PROXY", "127.0.0.1:9050")
+
 # Flask 앱 초기화
 app = Flask(__name__)
 CORS(app)
@@ -66,6 +68,8 @@ def run_flask():
     """
     Flask 서버를 별도의 쓰레드에서 실행
     """
+
+
     print("[START] Flask 웹 서버를 실행합니다...")
     app.run(debug=True, use_reloader=False, threaded=True)
 
@@ -75,11 +79,10 @@ async def main():
     Flask 서버 및 크롤링 작업 실행
     """
     # Flask 서버를 쓰레드에서 실행
+    time.sleep(10)
     flask_thread = threading.Thread(target=run_flask, daemon=True)
     flask_thread.start()
 
-    # 크롤러 실행
-    time.sleep(5)
     print("[INFO] 크롤러 작업을 실행합니다...")
     await exec_crawler()
 
