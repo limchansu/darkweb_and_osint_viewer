@@ -5,12 +5,13 @@ import asyncio
 import multiprocessing
 import os
 import time
+import sys
 
 # Flask 앱 초기화
 app = Flask(__name__)
 CORS(app)
 
-from main import setup_database, exec_crawler
+from main import setup_database, exec_crawler, run_crawler_periodically
 
 @app.route('/')
 def index():
@@ -42,7 +43,7 @@ async def search():
         # 두 카테고리의 모든 컬렉션을 순회
         for collection_name in dw_collections + osint_collections:
             db_collection = dw_db[collection_name] if collection_name in dw_collections else osint_db[collection_name]
-            cursor = db_collection.find().sort("_id", -1)  # _id 기준으로 내림차순 정렬 (최신순)
+            cursor = await db_collection.find().sort("_id", -1)  # _id 기준으로 내림차순 정렬 (최신순)
             async for doc in cursor:
                 result = {key: (str(value) if key == "_id" else value) for key, value in doc.items()}
                 results.append(result)
@@ -62,9 +63,9 @@ async def search():
         # 검색 필터
         if keywords:
             search_filter = {"title": {"$regex": keywords, "$options": "i"}}
-            cursor = db_collection.find(search_filter).sort("_id", -1)
+            cursor = await db_collection.find(search_filter).sort("_id", -1)
         else:
-            cursor = db_collection.find().sort("_id", -1)
+            cursor = await db_collection.find().sort("_id", -1)
 
         async for doc in cursor:
             result = {key: (str(value) if key == "_id" else value) for key, value in doc.items()}
@@ -86,11 +87,11 @@ def run_crawler():
     크롤러 작업을 실행
     """
     print("[INFO] 크롤러 작업을 실행합니다...")
-    asyncio.run(exec_crawler())
+    asyncio.run(run_crawler_periodically())
 
 
 if __name__ == "__main__":
-    time.sleep(25)
+    # time.sleep(25)
     try:
         # 크롤러 작업을 별도의 프로세스로 실행
         crawler_process = multiprocessing.Process(target=run_crawler, daemon=True)
