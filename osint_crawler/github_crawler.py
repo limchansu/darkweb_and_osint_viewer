@@ -2,10 +2,11 @@ import asyncio
 import aiohttp
 import json
 from datetime import datetime, timedelta
+import os
 
 GITHUB_TOKEN = ""
 GITHUB_API_URL = 'https://api.github.com/search/repositories'
-JSON_FILE_PATH = './osint_crawler/cleaned_keywords.json'
+JSON_FILE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), 'cleaned_keywords.json'))
 MIN_KEYWORDS_MATCH = 20
 DAYS_AGO = 730
 
