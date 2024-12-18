@@ -4,6 +4,7 @@ from flask_cors import CORS
 import asyncio
 import multiprocessing
 import os
+import time
 
 # Flask 앱 초기화
 app = Flask(__name__)
