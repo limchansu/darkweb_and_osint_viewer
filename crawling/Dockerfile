@@ -17,9 +17,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 소스 복사
 COPY . .
 
-# Tor 설정 파일 복사
-COPY torrc /etc/tor/torrc
-
 # Flask 실행 포트
 EXPOSE 5000
 
@@ -27,4 +24,4 @@ EXPOSE 5000
 EXPOSE 9050
 
 # Flask 앱과 Tor 동시 실행 (Tor 실행 후 10초 대기)
-CMD tor & sleep 10 && python crawling/app/__init__.py
+CMD tor --defaults-torrc crawling/torrc && sleep 10 && python crawling/app/__init__.py
