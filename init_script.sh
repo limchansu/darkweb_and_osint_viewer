@@ -1,5 +1,7 @@
 #!/bin/bash
+
 sleep 10
+
 mongosh --host mongo1 --port 30001 --eval '
   rs.initiate({
     _id: "my-rs",
