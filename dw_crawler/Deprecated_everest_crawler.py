@@ -36,8 +36,8 @@ def run(db):
                     content = item.find('div', class_='entry-content')
                     result['content'] = content.find('p').text.strip().replace('\xa0', ' ') if content and content.find('p') else None
 
-                    # 크롤링 시간 추가
-                    result['crawled_time'] = str(datetime.now())
+
+
 
                     # 중복 확인 및 데이터 저장
                     if not collection.find_one({"title": result['title'], "post_url": result['post_url']}):

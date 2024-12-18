@@ -127,7 +127,6 @@ async def x00org(db, show=False):
                         "title": post["title"],
                         "url": post["url"],
                         "keywords": post["keywords"],
-                        "crawled_time": str(datetime.now())
                     }
                     if show:
                         print(f'github: {post_data}')

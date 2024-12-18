@@ -61,7 +61,6 @@ async def blackbasta(db, show=False):
                             "title": title,
                             "url": url,
                             "description": description,
-                            "crawled_time": str(datetime.now()),
                         }
 
                         try:

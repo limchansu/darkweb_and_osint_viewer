@@ -36,7 +36,6 @@ async def crawl_page(base_url, proxy_address, schema, collection, show):
                 post_data = {
                     "title": title,
                     "description": description,
-                    "crawled_time": str(datetime.now())
                 }
 
                 # JSON Schema 검증

@@ -72,7 +72,6 @@ async def search_page(session, collection, target_url, keywords, show):
                     post_data = {
                         "title": title,
                         "url": url,
-                        "crawled_time": str(datetime.utcnow())
                     }
                     if show:
                         print(f'tuts4you: {post_data}')
