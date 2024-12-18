@@ -23,7 +23,7 @@ async def search():
     dw_collections = ["abyss", "blackbasta", "blacksuit", "breachdetector", "ctifeeds",
                       "daixin", "darkleak", "darknetARMY", "everest", "island",
                       "leakbase", "lockbit", "play", "rhysida", "htdark"]
-    osint_collections = ["github", "tuts4you", "0x00org"]
+    osint_collections = ["github", "tuts4you", "x00org"]
 
     dw_db, osint_db = await asyncio.gather(
         setup_database("darkweb", dw_collections),

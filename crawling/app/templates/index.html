@@ -81,7 +81,7 @@
   <script>
     // 옵션 데이터
     const options = {
-      osint: ["0x00org", "github", "tuts4you"],
+      osint: ["x00org", "github", "tuts4you"],
       darkweb: [
         "abyss", "blackbasta", "blacksuit", "breachdetector", "ctifeeds",
         "daixin", "darkleak", "darknetARMY", "everest", "island",
@@ -169,17 +169,24 @@
     }
 
     // 동적 데이터 렌더링 함수 (재귀 처리)
-    function renderData(data) {
+    function renderData(data, maxChars = 200) {
+      const truncate = (str, max) => {
+        if (str.length > max) {
+          return str.slice(0, max) + '...';
+        }
+        return str;
+      };
+
       if (typeof data !== 'object' || data === null) {
         // 기본 값(문자열, 숫자 등)을 처리
-        return `<p>${data}</p>`;
+        return `<p>${truncate(String(data), maxChars)}</p>`;
       }
 
       if (Array.isArray(data)) {
         // 배열 처리
         return `
           <ul>
-            ${data.map(item => `<li>${renderData(item)}</li>`).join('')}
+            ${data.map(item => `<li>${renderData(item, maxChars)}</li>`).join('')}
           </ul>
         `;
       }
@@ -190,8 +197,8 @@
           ${Object.entries(data)
             .map(([key, value]) => `
               <div>
-                <strong>${key}:</strong>
-                <div style="margin-left: 10px;">${renderData(value)}</div>
+                <strong>${truncate(key, maxChars)}:</strong>
+                <div style="margin-left: 10px;">${renderData(value, maxChars)}</div>
               </div>
             `)
             .join('')}
