@@ -1,6 +1,7 @@
 import asyncio
 import cloudscraper
 from bs4 import BeautifulSoup
+from .config import TOR_PROXYh
 
 def fetch_page_sync(url, proxies, headers):
     scraper = cloudscraper.create_scraper()
@@ -19,7 +20,7 @@ async def fetch_page(url, proxies, headers):
 async def htdark(db, show=False):
     collection = db["htdark"]
     base_url = "http://ky6urnzorg43zp5sw2gb46csndhpzn6ttpectmeooalwn2zc5w44rbqd.onion"
-    proxies = {"http": "socks5h://127.0.0.1:9050"}
+    proxies = {"http": TOR_PROXYh}
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     }

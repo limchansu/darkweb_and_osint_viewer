@@ -3,7 +3,7 @@ import aiohttp
 from aiohttp import ClientTimeout
 from aiohttp_socks import ProxyConnector
 from bs4 import BeautifulSoup
-
+from .config import TOR_PROXY
 
 async def fetch_page(session, url):
     try:
@@ -18,8 +18,7 @@ async def play(db, show=False):
     collection = db["play"]
     url = "http://k7kg3jqxang3wh7hnmaiokchk7qoebupfgoik6rha6mjpzwupwtj25yd.onion/"
 
-    proxy = "socks5://127.0.0.1:9050"  # Tor SOCKS5 프록시 설정
-    connector = ProxyConnector.from_url(proxy)
+    connector = ProxyConnector.from_url(TOR_PROXY)
 
     async with aiohttp.ClientSession(connector=connector) as session:
         try:

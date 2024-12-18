@@ -13,13 +13,15 @@ from dw_crawler.leakbase_crawler import leakbase
 from dw_crawler.lockbit_crawler import lockbit
 from dw_crawler.play_crawler import play
 from dw_crawler.rhysida_crawler import rhysida
+from osint_crawler.github_crawler import github
+from osint_crawler.tuts4you_crawler import tuts4you
 from osint_crawler.x00org_crawler import x00org
 import schedule
 import time
 from datetime import datetime, timedelta
 
 async def setup_database(db_name, collection_names):
-    """MongoDB 데이터베이스 및 컬렉션 생성"""
+
     client = AsyncIOMotorClient("mongodb://mongo1:30001,mongo2:30002,mongo:30003/?replicaSet=my-rs")
     db = client[db_name]
 
@@ -27,32 +29,32 @@ async def setup_database(db_name, collection_names):
     for collection in collection_names:
         if collection not in existing_collections:
             await db.create_collection(collection)
-            print(f"[INFO] {collection} 컬렉션 생성 완료! ({db_name})")
 
     return db
 
 async def exec_crawler():
-    """크롤러 실행"""
-    print(f"\n[INFO] 크롤러 실행 시작 ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')})")
     darkweb_collection_name = ['abyss','blackbasta','ctifeeds','daixin','darknetARMY', 'htdark', 'island', 'leakbase', 'lockbit', 'play', 'rhysida']
     darkweb_db = await setup_database('darkweb', darkweb_collection_name)
     osint_collection_name = ['github', 'tuts4you', 'x00org']
     osint_db = await setup_database('osint', osint_collection_name)
-    
+
     await asyncio.gather(
-        abyss(darkweb_db),
-        blackbasta(darkweb_db),
-        blacksuit(darkweb_db),
-        ctifeeds(darkweb_db),
-        daixin(darkweb_db),
-        darkleak(darkweb_db),
-        darknetARMY(darkweb_db),
-        htdark(darkweb_db),
-        island(darkweb_db),
-        leakbase(darkweb_db),
-        lockbit(darkweb_db),
-        rhysida(darkweb_db),
-        x00org(osint_db),
+        abyss(darkweb_db, True),
+        blackbasta(darkweb_db, True),
+        blacksuit(darkweb_db, True),
+        ctifeeds(darkweb_db, True),
+        daixin(darkweb_db, True),
+        darkleak(darkweb_db, True),
+        darknetARMY(darkweb_db, True),
+        htdark(darkweb_db, True),
+        island(darkweb_db, True),
+        leakbase(darkweb_db, True),
+        lockbit(darkweb_db, True),
+        play(darkweb_db, True),
+        rhysida(darkweb_db, True),
+        github(osint_db, True),
+        tuts4you(osint_db, True),
+        x00org(osint_db, True)
     )
     print(f"[INFO] 모든 크롤러 실행 완료! ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')})")
 
@@ -71,24 +73,24 @@ async def run_crawler_periodically():
     # 스케줄 설정
     schedule.every().day.at("15:56").do(lambda: None)  # 스케줄만 설정
     print(f"[INFO] 다음 예약된 실행: {schedule.next_run()}")
-    
+
     # 첫 실행
     await exec_crawler()
-    
+
     while True:
         # 다음 실행 시간까지 대기
         await wait_until_next_run()
-        
+
         # 현재 시간이 예약된 시간과 비슷한지 확인
         now = datetime.now()
         next_run = schedule.next_run()
-        
+
         if next_run and (now.hour == next_run.hour and now.minute == next_run.minute):
             # 크롤러 실행
             await exec_crawler()
             # 다음 날의 같은 시간까지 대기하기 위해 스케줄 갱신
             schedule.clear()
             schedule.every().day.at("15:56").do(lambda: None)
-            
+
             # 짧은 대기 시간을 추가하여 같은 시간에 중복 실행 방지
             await asyncio.sleep(60)

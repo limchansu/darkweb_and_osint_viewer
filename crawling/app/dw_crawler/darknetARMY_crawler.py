@@ -4,6 +4,8 @@ from aiohttp_socks import ProxyConnector
 from bs4 import BeautifulSoup
 from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorClient
+from .config import TOR_PROXY
+
 
 async def fetch_page(session, url):
 
@@ -62,9 +64,8 @@ async def process_page(db, session, base_url, show):
 async def darknetARMY(db, show=False):
 
     base_url = "http://dna777qhcrxy5sbvk7rkdd2phhxbftpdtxvwibih26nr275cdazx4uyd.onion/"
-    proxy_url = "socks5://127.0.0.1:9050"
 
-    connector = ProxyConnector.from_url(proxy_url)
+    connector = ProxyConnector.from_url(TOR_PROXY)
     headers = {"User-Agent": "Mozilla/5.0"}
 
     async with aiohttp.ClientSession(connector=connector, headers=headers) as session:

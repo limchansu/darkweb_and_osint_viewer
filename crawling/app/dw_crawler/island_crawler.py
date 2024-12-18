@@ -4,12 +4,13 @@ import playwright
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
 from jsonschema import validate
+from .config import TOR_PROXY
 
 async def island(db, show=False):
     collection = db["island"]
     base_url = "https://crackingisland.net"
     category_url = f"{base_url}/categories/combolists"
-    proxy_address = "socks5://127.0.0.1:9050"
+    proxy_address = TOR_PROXY
 
     schema = {
         "type": "object",

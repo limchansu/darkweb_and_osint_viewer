@@ -1,16 +1,16 @@
+import time
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import asyncio
-import threading
-import sys, os
+import multiprocessing
+import os
+import time
 
 # Flask 앱 초기화
 app = Flask(__name__)
 CORS(app)
 
-# 경로 설정
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
-from main import setup_database, run_crawler_periodically
+from main import setup_database, exec_crawler
 
 @app.route('/')
 def index():
@@ -74,38 +74,33 @@ async def search():
 
 
 def run_flask():
-    """Flask 서버를 별도의 쓰레드에서 실행"""
+    """
+    Flask 서버를 실행
+    """
     print("[START] Flask 웹 서버를 실행합니다...")
-    app.run(debug=False, use_reloader=False, threaded=True)
+    app.run(debug=True, use_reloader=False, threaded=True, host="0.0.0.0")
 
 
-def run_async_crawler():
-    """비동기 크롤러를 별도의 이벤트 루프에서 실행"""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        loop.run_until_complete(run_crawler_periodically())
-    finally:
-        loop.close()
-
-
-async def main():
-    """Flask 서버 및 스케줄된 크롤링 작업 실행"""
-    # Flask 서버를 쓰레드에서 실행
-    flask_thread = threading.Thread(target=run_flask, daemon=True)
-    flask_thread.start()
-
-    # 크롤러 스레드 시작 (스케줄링 포함)
-    crawler_thread = threading.Thread(target=run_async_crawler, daemon=True)
-    crawler_thread.start()
-
-    # 메인 스레드 유지
-    try:
-        while True:
-            await asyncio.sleep(1)
-    except KeyboardInterrupt:
-        print("\n[INFO] 프로그램을 종료합니다...")
+def run_crawler():
+    """
+    크롤러 작업을 실행
+    """
+    print("[INFO] 크롤러 작업을 실행합니다...")
+    asyncio.run(exec_crawler())
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    time.sleep(25)
+    try:
+        # 크롤러 작업을 별도의 프로세스로 실행
+        crawler_process = multiprocessing.Process(target=run_crawler, daemon=True)
+        crawler_process.start()
+
+        # 메인 프로세스에서 Flask 서버 실행
+        run_flask()
+
+        # 크롤러 프로세스 종료 관리
+        crawler_process.join()
+    except KeyboardInterrupt:
+        print("\n[EXIT] 프로그램을 종료합니다.")
+

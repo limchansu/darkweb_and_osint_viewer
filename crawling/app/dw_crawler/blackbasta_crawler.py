@@ -3,8 +3,8 @@ import playwright
 from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
 from jsonschema import validate, ValidationError
-from datetime import datetime
 from fake_useragent import UserAgent
+from .config import TOR_PROXY
 
 schema = {
     "type": "object",
@@ -24,11 +24,10 @@ async def blackbasta(db, show=False):
     base_url = "http://stniiomyjliimcgkvdszvgen3eaaoz55hreqqx6o77yvmpwt7gklffqd.onion"
     category_url = f"{base_url}/"
 
-    proxy_address = "127.0.0.1:9050"
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True, proxy={
-            "server": f"socks5://{proxy_address}"
+            "server": TOR_PROXY
         })
         context = await browser.new_context(user_agent=random_user_agent)
         page = await context.new_page()
