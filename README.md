@@ -24,7 +24,19 @@ This project is a **Dark Web and OSINT Data Monitoring System** that continuousl
 
 # Guide For Operation
 
+1. Navigate to the Project directory:
 
+```
+~/.../darkweb_and_osint_viewer
+```
+
+2. Docker Compose:
+
+```
+docker-compose up -d
+```
+
+3. Enjoy!
 
 ---
 
