@@ -10,11 +10,11 @@ from motor.motor_asyncio import AsyncIOMotorClient  # 비동기 MongoDB 클라�
 SCHEMA = {
     "type": "object",
     "properties": {
-        "file_name": {"type": "string"},
+        "title": {"type": "string"},
         "url": {"type": ["string", "null"]},
         "crawled_time": {"type": "string"}
     },
-    "required": ["file_name", "url"]
+    "required": ["title", "url"]
 }
 
 # TOR Proxy 설정
@@ -44,8 +44,8 @@ async def process_page(db, html, base_url, show):
 
         for row in rows:
             try:
-                # 파일 이름 추출
-                file_name = row.find("strong").text.strip()
+                # 제목(title) 추출
+                title = row.find("strong").text.strip()
 
                 # onclick 속성에서 URL 추출
                 onclick_attr = row.get("onclick")
@@ -57,7 +57,7 @@ async def process_page(db, html, base_url, show):
 
                 # 데이터 생성
                 post_data = {
-                    "file_name": file_name,
+                    "title": title,
                     "url": full_url,
                 }
 
@@ -66,7 +66,7 @@ async def process_page(db, html, base_url, show):
                 if show:
                     print(f'darkleak: {post_data}')
                 # 중복 확인 및 데이터 저장
-                if not await collection.find_one({"file_name": file_name, "url": full_url}):
+                if not await collection.find_one({"title": title, "url": full_url}):
                     obj = await collection.insert_one(post_data)
                     if show:
                         print('darkleak insert success ' + str(obj.inserted_id))
