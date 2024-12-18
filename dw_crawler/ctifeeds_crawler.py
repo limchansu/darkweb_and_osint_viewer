@@ -69,8 +69,6 @@ async def process_data(db, source, data, show):
                 if show and result.inserted_id:
                     print('ctifeeds insert success ' + str(result.inserted_id))
 
-        except ValidationError as e:
-            print(f"[ERROR] ctifeeds_crawler.py - process_data(): {e.message}")
         except Exception as e:
             print(f"[ERROR] ctifeeds_crawler.py - process_data(): {e}")
 
