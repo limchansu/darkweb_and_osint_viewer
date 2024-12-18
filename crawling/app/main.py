@@ -50,9 +50,7 @@ async def exec_crawler():
         lockbit(darkweb_db, True),
         play(darkweb_db, True),
         rhysida(darkweb_db, True),
-        # github(osint_db, True),
+        github(osint_db, True),
         tuts4you(osint_db, True),
         x00org(osint_db, True)
     )
-
-asyncio.run(exec_crawler())

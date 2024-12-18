@@ -5,11 +5,7 @@ from bs4 import BeautifulSoup
 import json
 import os
 import re
-from datetime import datetime
-from motor.motor_asyncio import AsyncIOMotorClient
-
-# Tor 프록시 설정
-PROXY_URL = "socks5://127.0.0.1:9050"
+from .config import TOR_PROXY
 
 # 비동기 Tor 요청 함수
 async def tor_request(session, url):
@@ -109,7 +105,7 @@ async def tuts4you(db, show=False):
     ]
 
     # Tor 프록시 커넥터 생성
-    connector = ProxyConnector.from_url(PROXY_URL)
+    connector = ProxyConnector.from_url(TOR_PROXY)
 
     # 비동기 세션 생성 및 크롤링 작업 수행
     async with aiohttp.ClientSession(connector=connector) as session:

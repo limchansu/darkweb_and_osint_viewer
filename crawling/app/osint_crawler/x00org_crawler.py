@@ -7,9 +7,7 @@ import os
 import re
 from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorClient
-
-# Tor 프록시 설정
-PROXY_URL = "socks5://127.0.0.1:9050"
+from .config import TOR_PROXY
 
 # 비동기 Tor 요청 함수
 async def tor_request(session, url, retries=3):
@@ -112,7 +110,7 @@ async def x00org(db, show=False):
     ]
 
     # Tor 프록시 커넥터 생성
-    connector = ProxyConnector.from_url(PROXY_URL)
+    connector = ProxyConnector.from_url(TOR_PROXY)
 
     async with aiohttp.ClientSession(connector=connector) as session:
         for base_url in base_urls:

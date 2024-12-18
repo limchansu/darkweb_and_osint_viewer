@@ -1,10 +1,8 @@
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import asyncio
-import threading
-import sys, os, time
-
-TOR_PROXY = "socks5://tor:9050"
+import multiprocessing
+import os
 
 # Flask 앱 초기화
 app = Flask(__name__)
@@ -12,10 +10,12 @@ CORS(app)
 
 from main import setup_database, exec_crawler
 
+
 # 라우팅
 @app.route('/')
 def index():
     return render_template('index.html')
+
 
 @app.route('/search', methods=['POST'])
 async def search():
@@ -54,7 +54,7 @@ async def search():
         cursor = db_collection.find(search_filter)
     else:
         cursor = db_collection.find()
-    
+
     # DB 탐색 결과 가공
     async for doc in cursor:
         # 모든 필드를 포함하여 반환
@@ -66,26 +66,31 @@ async def search():
 
 def run_flask():
     """
-    Flask 서버를 별도의 쓰레드에서 실행
+    Flask 서버를 실행
     """
-
-
     print("[START] Flask 웹 서버를 실행합니다...")
-    app.run(debug=True, use_reloader=False, threaded=True)
+    app.run(debug=True, use_reloader=False, threaded=True, host="0.0.0.0")
 
 
-async def main():
+def run_crawler():
     """
-    Flask 서버 및 크롤링 작업 실행
+    크롤러 작업을 실행
     """
-    # Flask 서버를 쓰레드에서 실행
-    time.sleep(10)
-    flask_thread = threading.Thread(target=run_flask, daemon=True)
-    flask_thread.start()
-
     print("[INFO] 크롤러 작업을 실행합니다...")
-    await exec_crawler()
+    asyncio.run(exec_crawler())
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        # 크롤러 작업을 별도의 프로세스로 실행
+        crawler_process = multiprocessing.Process(target=run_crawler, daemon=True)
+        crawler_process.start()
+
+        # 메인 프로세스에서 Flask 서버 실행
+        run_flask()
+
+        # 크롤러 프로세스 종료 관리
+        crawler_process.join()
+    except KeyboardInterrupt:
+        print("\n[EXIT] 프로그램을 종료합니다.")
+
