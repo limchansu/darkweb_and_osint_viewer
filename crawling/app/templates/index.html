@@ -150,12 +150,14 @@
       currentCards.forEach(item => {
         const card = document.createElement('div');
         card.className = 'col-md-3'; // 4개씩 가로로 배치 (1페이지에 16개)
+
+        // 동적 데이터 렌더링 함수 호출
+        const content = renderData(item);
+
         card.innerHTML = `
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title">${item.title}</h5>
-              <p class="card-text">${item.keyword || "No description available"}</p>
-              <a href="${item.url}" class="btn btn-primary" target="_blank">Go to Link</a>
+              ${content}
             </div>
           </div>
         `;
@@ -164,6 +166,37 @@
 
       // 페이지네이션 업데이트
       renderPagination(totalPages);
+    }
+
+    // 동적 데이터 렌더링 함수 (재귀 처리)
+    function renderData(data) {
+      if (typeof data !== 'object' || data === null) {
+        // 기본 값(문자열, 숫자 등)을 처리
+        return `<p>${data}</p>`;
+      }
+
+      if (Array.isArray(data)) {
+        // 배열 처리
+        return `
+          <ul>
+            ${data.map(item => `<li>${renderData(item)}</li>`).join('')}
+          </ul>
+        `;
+      }
+
+      // 객체 처리
+      return `
+        <div>
+          ${Object.entries(data)
+            .map(([key, value]) => `
+              <div>
+                <strong>${key}:</strong>
+                <div style="margin-left: 10px;">${renderData(value)}</div>
+              </div>
+            `)
+            .join('')}
+        </div>
+      `;
     }
 
     // 페이지네이션 처리
