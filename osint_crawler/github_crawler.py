@@ -72,13 +72,13 @@ async def github(db, show=False):
 
                     if match_count >= MIN_KEYWORDS_MATCH:
                         repo_info = {
-                            'repo_name': repo['full_name'],
+                            'title': repo['full_name'],
                             'url': repo['html_url'],
                             'description': (repo['description'] or 'No description available.')[:100],
                         }
                         if show:
                             print(f'github: {repo_info}')
-                        existing = await collection.find_one({"repo_name": repo_info['repo_name']})
+                        existing = await collection.find_one({"title": repo_info['repo_name']})
                         if not existing:
                             obj = await collection.insert_one(repo_info)
                             if show:
