@@ -8,8 +8,6 @@ import sys, os, time
 app = Flask(__name__)
 CORS(app)
 
-# 경로 설정
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 from main import setup_database, exec_crawler
 
 # 라우팅

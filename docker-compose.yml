@@ -35,9 +35,7 @@ services:
       - ./data/mongo3:/data/db
 
   setup:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: alpine/mongosh
     container_name: mongo_setup
     depends_on:
       - mongo1
@@ -60,7 +58,19 @@ services:
       '"
 
 
+  server:
+    build:
+      context: .
+      dockerfile: crawling/Dockerfile
+    container_name: server
+    ports:
+      - "5001:5000"
+    depends_on:
+      - mongo1
+      - mongo2
+      - mongo3
+    networks:
+      - my-cluster
+
 networks:
   my-cluster:
-    driver: bridge
-
