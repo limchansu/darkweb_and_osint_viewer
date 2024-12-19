@@ -138,16 +138,6 @@
       await handleSearchRequest(searchInput);
     }
 
-<<<<<<< HEAD
-=======
-      // "All" 카테고리가 선택되었고, 검색어가 없다면 빈 문자열로 처리
-      const keywords = searchInput;
-
-      if (!selectedOption || (selectedOption.option !== 'all' && !searchInput)) {
-        alert('Please select a category and an option (if applicable), and enter a keyword.');
-        return;
-      }
->>>>>>> 99c6369fab9b61dbd3038699d21ced6dd90c91a9
 
     // 검색 요청 및 렌더링
     async function handleSearchRequest(keywords) {
@@ -253,7 +243,6 @@
       const startPage = Math.floor((currentPage - 1) / maxVisiblePages) * maxVisiblePages + 1;
       const endPage = Math.min(startPage + maxVisiblePages - 1, totalPages);
 
-<<<<<<< HEAD
       // 이전 블록 버튼
       if (startPage > 1) {
         const prevBlockItem = document.createElement('li');
@@ -269,23 +258,6 @@
         prevBlockItem.innerHTML = `<a class="page-link" href="#" onclick="changePage(${startPage - 1})">&laquo;</a>`;
         pagination.appendChild(prevBlockItem);
       }
-=======
-	  // 이전 블록 버튼
-	  if (startPage > 1) {
-		const prevBlockItem = document.createElement('li');
-		prevBlockItem.className = 'page-item';
-		prevBlockItem.innerHTML = `<a class="page-link" href="#" onclick="changePage(1)">&laquo;&laquo;</a>`;
-		pagination.appendChild(prevBlockItem);
-	  }
-	  
-      // 이전 버튼
-	  if (startPage > 1) {
-		const prevBlockItem = document.createElement('li');
-		prevBlockItem.className = 'page-item';
-		prevBlockItem.innerHTML = `<a class="page-link" href="#" onclick="changePage(${startPage - 1})">&laquo;</a>`;
-		pagination.appendChild(prevBlockItem);
-	  }
->>>>>>> 99c6369fab9b61dbd3038699d21ced6dd90c91a9
 
       // 페이지 번호 표시
       for (let i = startPage; i <= endPage; i++) {
@@ -296,7 +268,6 @@
       }
 
       // 다음 버튼
-<<<<<<< HEAD
       if (endPage < totalPages) {
         const nextBlockItem = document.createElement('li');
         nextBlockItem.className = 'page-item';
@@ -309,12 +280,6 @@
         const nextBlockItem = document.createElement('li');
         nextBlockItem.className = 'page-item';
         nextBlockItem.innerHTML = `<a class="page-link" href="#" onclick="changePage(${totalPages})">&raquo;&raquo;</a>`;
-=======
-      if (endPage < totalPages) {
-        const nextBlockItem = document.createElement('li');
-        nextBlockItem.className = 'page-item';
-        nextBlockItem.innerHTML = `<a class="page-link" href="#" onclick="changePage(${endPage + 1})">&raquo;</a>`;
->>>>>>> 99c6369fab9b61dbd3038699d21ced6dd90c91a9
         pagination.appendChild(nextBlockItem);
       }
 
