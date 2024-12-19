@@ -106,7 +106,7 @@ def run_email_alarm():
     email_alarm.py를 실행하는 함수
     """
     print("[INFO] email_alarm.py를 실행합니다...")
-    os.system("python app/alarm/email_alarm.py") # 로컬
+    # os.system("python app/alarm/email_alarm.py") # 로컬
     os.system("python /app/crawling/app/alarm/email_alarm.py") # 도커
 
 
@@ -115,7 +115,7 @@ def run_discord_alarm():
     discord_alarm.py를 실행하는 함수
     """
     print("[INFO] discord_alarm.py를 실행합니다...")
-    os.system("python app/alarm/discord_alarm.py") # 로컬
+    # os.system("python app/alarm/discord_alarm.py") # 로컬
     os.system("python /app/crawling/app/alarm/discord_alarm.py") # 도커
 
 
