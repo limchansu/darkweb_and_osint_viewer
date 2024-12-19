@@ -1,5 +1,5 @@
 import os
-from sched import scheduler
+
 
 
 def create_alarm_config():
@@ -26,10 +26,10 @@ EMAIL_PASSWORD = '{email_password}' # 지메일 패스워드
 def create_dw_crawler_config():
     print('다크웹 크롤러 설정')
     print('\n')
-    return """# TOR_PROXY = "socks5://tor:9050 # 도커 사용시"
-TOR_PROXYh = "socks5h://tor:9050 # 도커 사용시"
-# TOR_PROXY = "socks5://127.0.0.1:9050 # 로컬"
-# TOR_PROXYh = "socks5h://127.0.0.1:9050 # 로컬"
+    return """# TOR_PROXY = "socks5://tor:9050" # 도커 사용시
+TOR_PROXYh = "socks5h://tor:9050" # 도커 사용시
+# TOR_PROXY = "socks5://127.0.0.1:9050" # 로컬
+# TOR_PROXYh = "socks5h://127.0.0.1:9050" # 로컬
 """
 
 
@@ -37,10 +37,10 @@ def create_osint_crawler_config():
     print('OSINT 크롤러 설정')
     github_token = input('깃허브 토큰: ')
     print('\n')
-    return f"""# TOR_PROXY = "socks5://tor:9050 # 도커 사용시"
-TOR_PROXYh = "socks5h://tor:9050 # 도커 사용시"
-# TOR_PROXY = "socks5://127.0.0.1:9050 # 로컬"
-# TOR_PROXYh = "socks5h://127.0.0.1:9050 # 로컬"
+    return f"""TOR_PROXY = "socks5://tor:9050" # 도커 사용시
+TOR_PROXYh = "socks5h://tor:9050" # 도커 사용시
+# TOR_PROXY = "socks5://127.0.0.1:9050" # 로컬
+# TOR_PROXYh = "socks5h://127.0.0.1:9050" # 로컬
 
 GITHUB_TOKEN = '{github_token}' # 깃허브 토큰
 """
