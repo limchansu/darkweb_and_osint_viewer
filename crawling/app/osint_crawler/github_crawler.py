@@ -3,8 +3,8 @@ import aiohttp
 import json
 from datetime import datetime, timedelta
 import os
+from .config import GITHUB_TOKEN
 
-GITHUB_TOKEN = ""
 GITHUB_API_URL = 'https://api.github.com/search/repositories'
 JSON_FILE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), 'cleaned_keywords.json'))
 MIN_KEYWORDS_MATCH = 20

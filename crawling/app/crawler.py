@@ -3,9 +3,8 @@ import asyncio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from motor.motor_asyncio import AsyncIOMotorClient
-
-from crawling.app.osint_crawler.github_crawler import github
-from crawling.app.osint_crawler.tuts4you_crawler import tuts4you
+from osint_crawler.github_crawler import github
+from osint_crawler.tuts4you_crawler import tuts4you
 from dw_crawler.abyss_crawler import abyss
 from dw_crawler.blackbasta_crawler import blackbasta
 from dw_crawler.blacksuit_crawler import blacksuit
@@ -20,6 +19,7 @@ from dw_crawler.lockbit_crawler import lockbit
 from dw_crawler.play_crawler import play
 from dw_crawler.rhysida_crawler import rhysida
 from osint_crawler.x00org_crawler import x00org
+from config import SCHEDULE_TIME
 import schedule
 import time
 from datetime import datetime, timedelta
@@ -69,14 +69,13 @@ async def exec_crawler():
 
 
 async def run_crawler_periodically():
-    schedule_time = "12:56"
     stop_event = asyncio.Event()
-    print(f'[INFO] 매일 {schedule_time}에 크롤러가 실행됨.')
+    print(f'[INFO] 매일 {SCHEDULE_TIME}에 크롤러가 실행됨.')
     print('[INFO] 크롤러 첫 시작')
     await exec_crawler() # 첫시작
     scheduler = AsyncIOScheduler()
 
-    hour, minute = map(int, schedule_time.split(":"))
+    hour, minute = map(int, SCHEDULE_TIME.split(":"))
     scheduler.add_job(exec_crawler, CronTrigger(hour=hour, minute=minute))
     scheduler.start()
 
