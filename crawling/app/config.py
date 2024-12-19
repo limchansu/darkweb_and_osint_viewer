@@ -1,0 +1,1 @@
+SCHEDULE_TIME = "12:56"
