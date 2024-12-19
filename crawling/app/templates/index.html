@@ -243,13 +243,21 @@
       const startPage = Math.floor((currentPage - 1) / maxVisiblePages) * maxVisiblePages + 1;
       const endPage = Math.min(startPage + maxVisiblePages - 1, totalPages);
 
+	  // 이전 블록 버튼
+	  if (startPage > 1) {
+		const prevBlockItem = document.createElement('li');
+		prevBlockItem.className = 'page-item';
+		prevBlockItem.innerHTML = `<a class="page-link" href="#" onclick="changePage(1)">&laquo;&laquo;</a>`;
+		pagination.appendChild(prevBlockItem);
+	  }
+	  
       // 이전 버튼
-      if (currentPage > 1) {
-        const prevItem = document.createElement('li');
-        prevItem.className = 'page-item';
-        prevItem.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage - 1})">&laquo;</a>`;
-        pagination.appendChild(prevItem);
-      }
+	  if (startPage > 1) {
+		const prevBlockItem = document.createElement('li');
+		prevBlockItem.className = 'page-item';
+		prevBlockItem.innerHTML = `<a class="page-link" href="#" onclick="changePage(${startPage - 1})">&laquo;</a>`;
+		pagination.appendChild(prevBlockItem);
+	  }
 
       // 페이지 번호 표시
       for (let i = startPage; i <= endPage; i++) {
@@ -260,20 +268,21 @@
       }
 
       // 다음 버튼
-      if (currentPage < totalPages) {
-        const nextItem = document.createElement('li');
-        nextItem.className = 'page-item';
-        nextItem.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage + 1})">&raquo;</a>`;
-        pagination.appendChild(nextItem);
-      }
-
-      // 다음 블록 버튼
       if (endPage < totalPages) {
         const nextBlockItem = document.createElement('li');
         nextBlockItem.className = 'page-item';
-        nextBlockItem.innerHTML = `<a class="page-link" href="#" onclick="changePage(${endPage + 1})">&raquo;&raquo;</a>`;
+        nextBlockItem.innerHTML = `<a class="page-link" href="#" onclick="changePage(${endPage + 1})">&raquo;</a>`;
         pagination.appendChild(nextBlockItem);
       }
+
+      // 다음 블록 버튼
+	  if (endPage < totalPages) {
+		const nextBlockItem = document.createElement('li');
+		nextBlockItem.className = 'page-item';
+		nextBlockItem.innerHTML = `<a class="page-link" href="#" onclick="changePage(${totalPages})">&raquo;&raquo;</a>`;
+		pagination.appendChild(nextBlockItem);
+	  }
+
     }
 
     // 페이지 변경
