@@ -73,7 +73,6 @@ def main():
 
     for directory, content_function in directories.items():
         full_path = os.path.join(project_root, 'crawling/app', directory)
-        print(full_path)
         if os.path.exists(full_path):
             create_config_file(full_path, content_function)
         else:

@@ -134,7 +134,7 @@
       const searchInput = document.getElementById('searchInput').value;
 
       // "All" 카테고리가 선택되었고, 검색어가 없다면 빈 문자열로 처리
-      const keywords = selectedOption.option === 'all' ? '' : searchInput;
+      const keywords = searchInput;
 
       if (!selectedOption || (selectedOption.option !== 'all' && !searchInput)) {
         alert('Please select a category and an option (if applicable), and enter a keyword.');
