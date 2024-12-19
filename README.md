@@ -30,13 +30,25 @@ This project is a **Dark Web and OSINT Data Monitoring System** that continuousl
 ~/.../darkweb_and_osint_viewer
 ```
 
-2. Docker Compose:
+2. Use `generate_configs.py` to config. your Token settings. Answering following questions will automatically set config files for each crawlers and alarm utils.
+
+```
+./generate_configs.py
+```
+
+3. After configuring Token info ends, use Docker Compose:
 
 ```
 docker-compose up -d
 ```
 
-3. Enjoy!
+4. You can then access `localhost:5000` to view Web Page displaying DB's components.
+
+```
+localhost:5000
+```
+
+5. Enjoy!
 
 ---
 
