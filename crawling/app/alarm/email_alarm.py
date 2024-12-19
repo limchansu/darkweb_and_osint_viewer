@@ -1,5 +1,5 @@
 import os
-import smtplib
+import aiosmtplib
 from email.mime.text import MIMEText
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import ServerSelectionTimeoutError
@@ -12,25 +12,24 @@ MONGO_URI = "mongodb://mongo1:30001,mongo2:30002,mongo3:30003/?replicaSet=my-rs"
 DARKWEB_DB = "darkweb"
 OSINT_DB = "osint"
 
-# 이메일 전송 함수
 async def send_email(subject, body):
+    """
+    비동기 이메일 전송 함수 (aiosmtplib 사용)
+    """
     try:
         msg = MIMEText(body, "plain")
         msg["Subject"] = subject
         msg["From"] = EMAIL_SENDER
         msg["To"] = EMAIL_SENDER
 
-        # SMTP 클라이언트 생성 및 이메일 전송
-        loop = asyncio.get_event_loop()
-
-        def smtp_send():
-            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-                server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-                server.sendmail(EMAIL_SENDER, EMAIL_SENDER, msg.as_string())
-
-        # SMTP 전송을 비동기로 실행
-        await loop.run_in_executor(None, smtp_send)
+        # SMTP 서버에 연결 및 이메일 전송
+        async with aiosmtplib.SMTP(hostname="smtp.gmail.com", port=465, use_tls=True) as server:
+            await server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+            await server.send_message(msg)
+            
         print("[INFO] 이메일 전송 성공!")
+    except aiosmtplib.SMTPException as smtp_err:
+        print(f"[ERROR] SMTP 오류: {smtp_err}")
     except Exception as e:
         print(f"[ERROR] 이메일 전송 실패: {e}")
 
@@ -50,7 +49,7 @@ async def send_batch_emails():
     """
     global changed_docs
     while True:
-        await asyncio.sleep(600)  # 10분 간격으로 실행
+        await asyncio.sleep(60)  # 10분 간격으로 실행
 
         if changed_docs:  # 변경 사항이 있으면 이메일로 전송
             try:

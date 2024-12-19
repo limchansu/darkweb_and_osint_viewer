@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sleep 30
+sleep 25
 
 mongosh --host mongo1 --port 30001 --eval '
   rs.initiate({
