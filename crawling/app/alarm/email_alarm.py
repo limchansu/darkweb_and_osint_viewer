@@ -5,10 +5,9 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import ServerSelectionTimeoutError
 import asyncio
 from datetime import datetime, timedelta
+from config import EMAIL_SENDER, EMAIL_PASSWORD
 
-# 이메일 정보 설정
-EMAIL_SENDER = "tastyTiramisu110@gmail.com"
-EMAIL_PASSWORD = "duca bjnc ynsf mmup"
+print(EMAIL_SENDER, EMAIL_PASSWORD)
 
 # MongoDB 연결 설정
 MONGO_URI = "mongodb://mongo1:30001,mongo2:30002,mongo3:30003/?replicaSet=my-rs"
