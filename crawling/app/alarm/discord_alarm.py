@@ -74,4 +74,5 @@ def discord_agent():
 
     bot.run(DISCORDTOKEN)
 
-discord_agent()
+if __name__ == '__main__':
+    discord_agent()

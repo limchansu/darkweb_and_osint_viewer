@@ -14,8 +14,8 @@ def create_alarm_config():
     print('\n')
 
     return f"""DISCORDTOKEN = '{discord_token}' # 디스코드 토큰
-DARKWEB_CHANNEL_ID = '{darkweb_channel_id}'  # 다크웹 채널 아이디
-OSINT_CHANNEL_ID = '{osint_channel_id}' # 오신트 채널 아이디
+DARKWEB_CHANNEL_ID = {darkweb_channel_id}  # 다크웹 채널 아이디
+OSINT_CHANNEL_ID = {osint_channel_id} # 오신트 채널 아이디
 
 # 지메일만 가능
 EMAIL_SENDER = '{email_sender}' # 자매일 이메일
@@ -52,7 +52,7 @@ def create_crawler_config():
     return f"""SCHEDULE_TIME = '{schedule_time}'"""
 
 def create_config_file(directory, content_function):
-    config_path = os.path.join(directory, "1config.py")
+    config_path = os.path.join(directory, "config.py")
 
     if os.path.exists(config_path):
         os.remove(config_path)
@@ -73,7 +73,6 @@ def main():
 
     for directory, content_function in directories.items():
         full_path = os.path.join(project_root, 'crawling/app', directory)
-        print(full_path)
         if os.path.exists(full_path):
             create_config_file(full_path, content_function)
         else:
