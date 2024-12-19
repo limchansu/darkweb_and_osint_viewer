@@ -120,7 +120,7 @@ def run_discord_alarm():
 
 
 if __name__ == "__main__":
-    time.sleep(25)
+    time.sleep(35)
     try:
         # discord_alarm.py 작업을 별도의 프로세스로 실행
         discord_alarm_process = multiprocessing.Process(target=run_discord_alarm, daemon=True)
