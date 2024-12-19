@@ -65,7 +65,7 @@
       margin-bottom: 15px;
     }
   </style>
-  <script>
+<script>
     const options = {
       osint: ["x00org", "github", "tuts4you"],
       darkweb: [
@@ -114,21 +114,11 @@
           container.appendChild(button);
         });
       } else if (category === 'all') {
-        const button = document.createElement('button');
-        button.className = 'btn btn-secondary m-1 option-btn';
-        button.textContent = 'all';
+        selectedOption.option = 'all';
+        console.log('Selected Option:', selectedOption);
 
-        button.onclick = async () => {
-          document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('active'));
-          selectedOption.option = 'all';
-          button.classList.add('active');
-          console.log('Selected Option:', selectedOption);
-
-          // "All" 선택 시 즉시 데이터 요청
-          await handleSearchRequest('');
-        };
-
-        allOptions.appendChild(button);
+        // "All" 선택 시 즉시 데이터 요청
+        handleSearchRequest('');
       }
     }
 
@@ -233,9 +223,8 @@
           return `<div><strong>${truncate(key, maxChars)}:</strong><div style="margin-left: 10px;">${renderData(value, maxChars)}</div></div>`;
         }).join('')}</div>`;
     }
-
-     // 페이지네이션
-     function renderPagination(totalPages) {
+	// 페이지네이션
+    function renderPagination(totalPages) {
       const pagination = document.getElementById('pagination');
       pagination.innerHTML = '';
 
@@ -298,14 +287,15 @@
       currentPage = page; // 페이지 업데이트
       renderCards(searchResults); // 검색 결과 재렌더링
     }
-  </script>
+</script>
+
 </head>
 
 <body>
   <div class="container">
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
       <div class="container-fluid">
-        <a class="navbar-brand" href="#">Darkweb/OSINT Project</a>
+        <a class="navbar-brand" href="localhost:5000">Darkweb/OSINT Project</a>
         <form class="d-flex" onsubmit="handleSearch(event);">
           <input id="searchInput" class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
           <button class="btn btn-outline-success" type="submit">Search</button>
@@ -314,9 +304,9 @@
     </nav>
 
     <div class="my-3">
+	  <button id="allBtn" class="btn btn-primary category-btn" onclick="toggleCategory('all')">All</button>
       <button id="osintBtn" class="btn btn-primary category-btn" onclick="toggleCategory('osint')">OSINT</button>
       <button id="darkwebBtn" class="btn btn-primary category-btn" onclick="toggleCategory('darkweb')">Darkweb</button>
-      <button id="allBtn" class="btn btn-primary category-btn" onclick="toggleCategory('all')">All</button>
     </div>
 
     <div id="osintOptions" class="options-container"></div>
