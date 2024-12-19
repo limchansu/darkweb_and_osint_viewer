@@ -43,7 +43,7 @@ async def search():
         # 두 카테고리의 모든 컬렉션을 순회
         for collection_name in dw_collections + osint_collections:
             db_collection = dw_db[collection_name] if collection_name in dw_collections else osint_db[collection_name]
-            cursor = await db_collection.find().sort("_id", -1)  # _id 기준으로 내림차순 정렬 (최신순)
+            cursor = db_collection.find().sort("_id", -1)  # _id 기준으로 내림차순 정렬 (최신순)
             async for doc in cursor:
                 result = {key: (str(value) if key == "_id" else value) for key, value in doc.items()}
                 results.append(result)
@@ -63,9 +63,9 @@ async def search():
         # 검색 필터
         if keywords:
             search_filter = {"title": {"$regex": keywords, "$options": "i"}}
-            cursor = await db_collection.find(search_filter).sort("_id", -1)
+            cursor = db_collection.find(search_filter).sort("_id", -1)
         else:
-            cursor = await db_collection.find().sort("_id", -1)
+            cursor = db_collection.find().sort("_id", -1)
 
         async for doc in cursor:
             result = {key: (str(value) if key == "_id" else value) for key, value in doc.items()}
