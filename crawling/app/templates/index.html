@@ -271,15 +271,6 @@
         nextBlockItem.innerHTML = `<a class="page-link" href="#" onclick="changePage(${totalPages})">&raquo;&raquo;</a>`;
         pagination.appendChild(nextBlockItem);
       }
-
-      // 다음 블록 버튼
-	  if (endPage < totalPages) {
-      const nextBlockItem = document.createElement('li');
-      nextBlockItem.className = 'page-item';
-      nextBlockItem.innerHTML = `<a class="page-link" href="#" onclick="changePage(${totalPages})">&raquo;&raquo;</a>`;
-      pagination.appendChild(nextBlockItem);
-	  }
-
     }
 
     // 페이지 변경
