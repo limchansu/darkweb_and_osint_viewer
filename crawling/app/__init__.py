@@ -91,7 +91,7 @@ def run_crawler():
 
 
 if __name__ == "__main__":
-    # time.sleep(25)
+    time.sleep(25)
     try:
         # 크롤러 작업을 별도의 프로세스로 실행
         crawler_process = multiprocessing.Process(target=run_crawler, daemon=True)
