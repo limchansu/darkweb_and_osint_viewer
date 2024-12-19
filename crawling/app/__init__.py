@@ -11,7 +11,7 @@ import sys
 app = Flask(__name__)
 CORS(app)
 
-from main import setup_database, exec_crawler, run_crawler_periodically
+from crawler import setup_database, exec_crawler, run_crawler_periodically
 
 @app.route('/')
 def index():
