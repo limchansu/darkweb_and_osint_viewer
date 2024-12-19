@@ -106,7 +106,8 @@ def run_email_alarm():
     email_alarm.py를 실행하는 함수
     """
     print("[INFO] email_alarm.py를 실행합니다...")
-    os.system("python app/alarm/email_alarm.py")
+    os.system("python app/alarm/email_alarm.py") # 로컬
+    os.system("python /app/crawling/app/alarm/email_alarm.py") # 도커
 
 
 def run_discord_alarm():
@@ -114,7 +115,8 @@ def run_discord_alarm():
     discord_alarm.py를 실행하는 함수
     """
     print("[INFO] discord_alarm.py를 실행합니다...")
-    os.system("python app/alarm/discord_alarm.py")
+    os.system("python app/alarm/discord_alarm.py") # 로컬
+    os.system("python /app/crawling/app/alarm/discord_alarm.py") # 도커
 
 
 if __name__ == "__main__":
@@ -123,7 +125,7 @@ if __name__ == "__main__":
         # discord_alarm.py 작업을 별도의 프로세스로 실행
         discord_alarm_process = multiprocessing.Process(target=run_discord_alarm, daemon=True)
         discord_alarm_process.start()
-        time.sleep(10)
+        time.sleep(5)
 
         # email_alarm.py 작업을 별도의 프로세스로 실행
         email_alarm_process = multiprocessing.Process(target=run_email_alarm, daemon=True)
@@ -133,14 +135,6 @@ if __name__ == "__main__":
         # 크롤러 작업을 별도의 프로세스로 실행
         crawler_process = multiprocessing.Process(target=run_crawler, daemon=True)
         crawler_process.start()
-
-        # email_alarm.py 작업을 별도의 프로세스로 실행
-        email_alarm_process = multiprocessing.Process(target=run_email_alarm, daemon=True)
-        email_alarm_process.start()
-
-        # discord_alarm.py 작업을 별도의 프로세스로 실행
-        discord_alarm_process = multiprocessing.Process(target=run_discord_alarm, daemon=True)
-        discord_alarm_process.start()
 
         # 메인 프로세스에서 Flask 서버 실행
         run_flask()
