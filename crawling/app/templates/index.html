@@ -85,12 +85,10 @@
       const darkwebOptions = document.getElementById('darkwebOptions');
       const allOptions = document.getElementById('allOptions');
 
-      // 초기화 및 상태 설정
       selectedOption = { category, option: category === 'all' ? 'all' : null };
       document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
       document.getElementById(`${category}Btn`).classList.add('active');
 
-      // 옵션 컨테이너 초기화
       osintOptions.innerHTML = '';
       darkwebOptions.innerHTML = '';
       allOptions.innerHTML = '';
@@ -102,11 +100,15 @@
           button.className = 'btn btn-secondary m-1 option-btn';
           button.textContent = option;
 
-          button.onclick = () => {
+          button.onclick = async (e) => {
             document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('active'));
             selectedOption.option = option;
             button.classList.add('active');
+            
             console.log('Selected Option:', selectedOption);
+
+            // 옵션 클릭 시 즉시 데이터 요청
+            await handleSearchRequest('');
           };
 
           container.appendChild(button);
@@ -116,35 +118,33 @@
         button.className = 'btn btn-secondary m-1 option-btn';
         button.textContent = 'all';
 
-        button.onclick = () => {
+        button.onclick = async () => {
           document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('active'));
           selectedOption.option = 'all';
           button.classList.add('active');
           console.log('Selected Option:', selectedOption);
+
+          // "All" 선택 시 즉시 데이터 요청
+          await handleSearchRequest('');
         };
 
         allOptions.appendChild(button);
       }
     }
 
-    // 검색 요청 및 렌더링
     async function handleSearch(event) {
       event.preventDefault();
-
       const searchInput = document.getElementById('searchInput').value;
+      await handleSearchRequest(searchInput);
+    }
 
-      // "All" 카테고리가 선택되었고, 검색어가 없다면 빈 문자열로 처리
-      const keywords = selectedOption.option === 'all' ? '' : searchInput;
 
-      if (!selectedOption || (selectedOption.option !== 'all' && !searchInput)) {
-        alert('Please select a category and an option (if applicable), and enter a keyword.');
-        return;
-      }
-
+    // 검색 요청 및 렌더링
+    async function handleSearchRequest(keywords) {
       const postData = {
         category: selectedOption.category,
-        option: selectedOption.option,
-        keywords: keywords // 'all'일 경우 빈 문자열을 전송
+        option: selectedOption.option || 'all',
+        keywords: keywords || '' // 키워드가 없을 경우 빈 문자열
       };
 
       console.log('Sending search request with data:', postData);
@@ -234,8 +234,8 @@
         }).join('')}</div>`;
     }
 
-    // 페이지네이션
-    function renderPagination(totalPages) {
+     // 페이지네이션
+     function renderPagination(totalPages) {
       const pagination = document.getElementById('pagination');
       pagination.innerHTML = '';
 
@@ -243,12 +243,20 @@
       const startPage = Math.floor((currentPage - 1) / maxVisiblePages) * maxVisiblePages + 1;
       const endPage = Math.min(startPage + maxVisiblePages - 1, totalPages);
 
+      // 이전 블록 버튼
+      if (startPage > 1) {
+        const prevBlockItem = document.createElement('li');
+        prevBlockItem.className = 'page-item';
+        prevBlockItem.innerHTML = `<a class="page-link" href="#" onclick="changePage(1)">&laquo;&laquo;</a>`;
+        pagination.appendChild(prevBlockItem);
+      }
+	  
       // 이전 버튼
-      if (currentPage > 1) {
-        const prevItem = document.createElement('li');
-        prevItem.className = 'page-item';
-        prevItem.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage - 1})">&laquo;</a>`;
-        pagination.appendChild(prevItem);
+      if (startPage > 1) {
+        const prevBlockItem = document.createElement('li');
+        prevBlockItem.className = 'page-item';
+        prevBlockItem.innerHTML = `<a class="page-link" href="#" onclick="changePage(${startPage - 1})">&laquo;</a>`;
+        pagination.appendChild(prevBlockItem);
       }
 
       // 페이지 번호 표시
@@ -260,18 +268,18 @@
       }
 
       // 다음 버튼
-      if (currentPage < totalPages) {
-        const nextItem = document.createElement('li');
-        nextItem.className = 'page-item';
-        nextItem.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage + 1})">&raquo;</a>`;
-        pagination.appendChild(nextItem);
+      if (endPage < totalPages) {
+        const nextBlockItem = document.createElement('li');
+        nextBlockItem.className = 'page-item';
+        nextBlockItem.innerHTML = `<a class="page-link" href="#" onclick="changePage(${endPage + 1})">&raquo;</a>`;
+        pagination.appendChild(nextBlockItem);
       }
 
       // 다음 블록 버튼
       if (endPage < totalPages) {
         const nextBlockItem = document.createElement('li');
         nextBlockItem.className = 'page-item';
-        nextBlockItem.innerHTML = `<a class="page-link" href="#" onclick="changePage(${endPage + 1})">&raquo;&raquo;</a>`;
+        nextBlockItem.innerHTML = `<a class="page-link" href="#" onclick="changePage(${totalPages})">&raquo;&raquo;</a>`;
         pagination.appendChild(nextBlockItem);
       }
     }
