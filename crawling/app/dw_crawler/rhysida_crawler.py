@@ -1,7 +1,8 @@
-from aiohttp_socks import ProxyConnector
+from aiohttp import ClientSession
+from aiohttp import ClientTimeout
 from aiohttp_socks import ProxyConnector
 from bs4 import BeautifulSoup
-
+import chardet
 from .config import TOR_PROXY
 
 

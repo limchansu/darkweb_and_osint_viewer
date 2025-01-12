@@ -1,4 +1,4 @@
-from aiohttp_socks import ProxyConnector
+from aiohttp import ClientSession
 from aiohttp_socks import ProxyConnector
 from bs4 import BeautifulSoup
 

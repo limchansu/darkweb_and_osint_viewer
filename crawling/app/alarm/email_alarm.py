@@ -50,7 +50,7 @@ async def send_batch_emails():
     """
     global changed_docs
     while True:
-        await asyncio.sleep(600)  # 10분 간격으로 실행
+        await asyncio.sleep(60)  # 10분 간격으로 실행
 
         if changed_docs:  # 변경 사항이 있으면 이메일로 전송
             try:
@@ -93,10 +93,10 @@ async def watch_database():
                     if updated_document and "title" in updated_document:
                         utc_time, kor_time = format_times_from_id(document_key)
                         changed_docs.append(
-                            f"- **제목**: {updated_document['title']}\n"
-                            f"- **유출한 사이트**: {db_name}.{collection_name}\n"
-                            f"- **UTC 시간**: {utc_time}\n"
-                            f"- **한국 시간**: {kor_time}"
+                            f"- Title: {updated_document['title']}\n"
+                            f"- Site: {db_name}.{collection_name}\n"
+                            f"- UTC Time: {utc_time}\n"
+                            f"- Kor Time: {kor_time}\n\n"
                         )
 
     except ServerSelectionTimeoutError as e:

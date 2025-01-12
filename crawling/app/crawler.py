@@ -50,7 +50,7 @@ async def exec_crawler():
         blackbasta(darkweb_db, True),
         blacksuit(darkweb_db, True),
         ctifeeds(darkweb_db, True),
-        daixin(darkweb_db, True),
+        daixin(darkweb_db, True), #문제
         darkleak(darkweb_db, True),
         darknetARMY(darkweb_db, True),
         htdark(darkweb_db, True),

@@ -33,7 +33,7 @@ async def darkweb_monitor(db):
                 local_timestamp = timestamp.astimezone(local_timezone)
                 channel = bot.get_channel(DARKWEB_CHANNEL_ID)
                 if channel:
-                    await channel.send(f"📢 **다크웹에서 유출된 정보 감지**\n**제목**: {new_document.get('title', '제목 없음')}\n**유출한 사이트** : {site_name}\n**UTC 시간**: {timestamp}\n**한국 시간**: {local_timestamp}")
+                    await channel.send(f"📢 **Leaked Information Detected on the Dark Web** **Title**: {new_document.get('title', 'No Title')}\n**Leaking Site**: {site_name}\n**UTC Time**: {timestamp}\n**KST Time**: {local_timestamp}\n ")
                 else:
                     print("채널을 찾을 수 없습니다.")
     except Exception as e:
@@ -58,7 +58,8 @@ async def osint_monitor(db):
                 channel = bot.get_channel(OSINT_CHANNEL_ID)
                 if channel:
                     await channel.send(
-                        f"📢 **OSINT 정보 감지**\n**제목**: {new_document.get('title', '제목 없음')}\n**사이트** : {site_name}\n**UTC 시간**: {timestamp}\n**한국 시간**: {local_timestamp}")
+                        f"📢 **OSINT Information Detected**\n**Title**: {new_document.get('title', 'No Title')}\n**Site**: {site_name}\n**UTC Time**: {timestamp}\n**KST Time**: {local_timestamp}\n ")
+
                 else:
                     print("채널을 찾을 수 없습니다.")
     except Exception as e:
