@@ -50,7 +50,7 @@ async def send_batch_emails():
     """
     global changed_docs
     while True:
-        await asyncio.sleep(60)  # 10분 간격으로 실행
+        await asyncio.sleep(600)  # 10분 간격으로 실행
 
         if changed_docs:  # 변경 사항이 있으면 이메일로 전송
             try:
