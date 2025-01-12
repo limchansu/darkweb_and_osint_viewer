@@ -1,9 +1,11 @@
 import asyncio
+
 import playwright
-from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
-from jsonschema import validate, ValidationError
 from fake_useragent import UserAgent
+from jsonschema import validate, ValidationError
+from playwright.async_api import async_playwright
+
 from .config import TOR_PROXY
 
 schema = {

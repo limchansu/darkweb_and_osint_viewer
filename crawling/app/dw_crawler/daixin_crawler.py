@@ -1,9 +1,9 @@
-import asyncio
 from aiohttp_socks import ProxyConnector
-from aiohttp import ClientSession
+from aiohttp_socks import ProxyConnector
 from bs4 import BeautifulSoup
-from pymongo import MongoClient
+
 from .config import TOR_PROXY
+
 
 async def fetch_page(session, url):
 

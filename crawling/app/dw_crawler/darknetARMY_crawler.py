@@ -1,9 +1,7 @@
-import asyncio
 import aiohttp
 from aiohttp_socks import ProxyConnector
 from bs4 import BeautifulSoup
-from datetime import datetime
-from motor.motor_asyncio import AsyncIOMotorClient
+
 from .config import TOR_PROXY
 
 

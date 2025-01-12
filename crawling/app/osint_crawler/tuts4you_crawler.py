@@ -1,11 +1,14 @@
 import asyncio
-import aiohttp
-from aiohttp_socks import ProxyConnector
-from bs4 import BeautifulSoup
 import json
 import os
 import re
+
+import aiohttp
+from aiohttp_socks import ProxyConnector
+from bs4 import BeautifulSoup
+
 from .config import TOR_PROXY
+
 
 # 비동기 Tor 요청 함수
 async def tor_request(session, url):

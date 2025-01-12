@@ -1,7 +1,7 @@
-import asyncio
 import aiohttp
 from aiohttp_socks import ProxyConnector
 from bs4 import BeautifulSoup
+
 from .config import TOR_PROXY
 
 

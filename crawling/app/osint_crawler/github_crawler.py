@@ -1,8 +1,9 @@
-import asyncio
-import aiohttp
 import json
-from datetime import datetime, timedelta
 import os
+from datetime import datetime, timedelta
+
+import aiohttp
+
 from .config import GITHUB_TOKEN
 
 GITHUB_API_URL = 'https://api.github.com/search/repositories'

@@ -1,7 +1,10 @@
 import asyncio
+
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
+
 from .config import TOR_PROXY
+
 
 async def lockbit(db, show=False):
     collection = db["lockbit"]

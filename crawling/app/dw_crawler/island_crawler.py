@@ -2,9 +2,11 @@ import asyncio
 
 import playwright
 from bs4 import BeautifulSoup
-from playwright.async_api import async_playwright
 from jsonschema import validate
+from playwright.async_api import async_playwright
+
 from .config import TOR_PROXY
+
 
 async def island(db, show=False):
     collection = db["island"]

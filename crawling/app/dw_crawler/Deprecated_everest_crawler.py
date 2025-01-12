@@ -1,8 +1,7 @@
 # 사이트 닫힘.....
 
-from requests_tor import RequestsTor
 from bs4 import BeautifulSoup
-from datetime import datetime
+from requests_tor import RequestsTor
 
 # RequestsTor 초기화
 rt = RequestsTor(tor_ports=(9050,), tor_cport=9051)

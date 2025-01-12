@@ -1,10 +1,8 @@
-import asyncio
 from aiohttp_socks import ProxyConnector
-from aiohttp import ClientSession, ClientTimeout
+from aiohttp_socks import ProxyConnector
 from bs4 import BeautifulSoup
-import chardet
-from .config import TOR_PROXY
 
+from .config import TOR_PROXY
 
 
 async def fetch_page(session, url):

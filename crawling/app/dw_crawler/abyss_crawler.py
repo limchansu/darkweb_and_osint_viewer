@@ -1,11 +1,12 @@
-import os
 import asyncio
-from playwright.async_api import async_playwright
+
 from bs4 import BeautifulSoup
-from datetime import datetime
 from jsonschema import validate, ValidationError
-from pymongo import MongoClient
+from playwright.async_api import async_playwright
+
 from .config import TOR_PROXY
+
+
 async def crawl_page(base_url, schema, collection, show):
     """
     개별 페이지를 크롤링하는 비동기 함수 (Playwright 사용)

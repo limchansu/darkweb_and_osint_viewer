@@ -35,4 +35,4 @@ EXPOSE 5000
 
 
 # Flask 앱과 Tor 동시 실행 (Tor 실행 후 10초 대기)
-CMD python crawling/app/__init__.py
+CMD python crawling/app/run.py

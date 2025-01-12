@@ -1,7 +1,10 @@
 import asyncio
+
 import cloudscraper
 from bs4 import BeautifulSoup
+
 from .config import TOR_PROXYh
+
 
 def fetch_page_sync(url, proxies, headers):
     scraper = cloudscraper.create_scraper()

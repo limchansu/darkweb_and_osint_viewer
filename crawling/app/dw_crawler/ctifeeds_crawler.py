@@ -1,8 +1,8 @@
 import asyncio
-import aiohttp
-from pymongo import MongoClient
-from jsonschema import validate, ValidationError
 
+import aiohttp
+from jsonschema import validate
+from pymongo import MongoClient
 
 # JSON 데이터 URL 목록 및 카테고리 이름
 json_sources = [

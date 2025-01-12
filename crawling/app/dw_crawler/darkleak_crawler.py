@@ -1,11 +1,11 @@
-import os
 import asyncio
-from playwright.async_api import async_playwright
+
 from bs4 import BeautifulSoup
 from jsonschema import validate, ValidationError
-from datetime import datetime
-from motor.motor_asyncio import AsyncIOMotorClient  # 비동기 MongoDB 클라이언트
+from playwright.async_api import async_playwright
+
 from .config import TOR_PROXY
+
 # JSON Schema 정의
 SCHEMA = {
     "type": "object",
